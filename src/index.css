@@ -1,0 +1,54 @@
+/* 1. Включаем правильную border-box модель для всех элементов */
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+/* 2. Убираем дефолтные внешние отступы */
+* {
+	margin: 0;
+	padding: 0;
+}
+
+/* 3. Настраиваем общие параметры для тела страницы */
+body {
+	line-height: 1.5;
+	-webkit-font-smoothing: antialiased;
+	min-height: 100vh;
+}
+
+/* 4. Улучшаем работу с медиа-элементами (картинки не будут вылезать за границы) */
+img,
+picture,
+video,
+canvas,
+svg {
+	display: block;
+	max-width: 100%;
+}
+
+/* 5. Наследуем шрифты для инпутов и кнопок (по умолчанию браузер ставит им свои) */
+input,
+button,
+textarea,
+select {
+	font: inherit;
+}
+
+/* 6. Убираем стандартные точки у списков */
+ol,
+ul {
+	list-style: none;
+}
+
+/* 7. Перенос слов по умолчанию для предотвращения поломки верстки */
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	overflow-wrap: break-word;
+}
