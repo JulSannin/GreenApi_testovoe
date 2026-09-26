@@ -15,7 +15,9 @@
 body {
 	line-height: 1.5;
 	-webkit-font-smoothing: antialiased;
-	min-height: 100vh;
+	/* 100dvh — видимая высота экрана с учётом панелей мобильного браузера.
+	   100vh на телефоне больше видимой области, и страница начинает прокручиваться */
+	min-height: 100dvh;
 }
 
 /* 4. Улучшаем работу с медиа-элементами (картинки не будут вылезать за границы) */
@@ -51,4 +53,33 @@ h4,
 h5,
 h6 {
 	overflow-wrap: break-word;
+}
+
+/* 8. Цвета и размеры интерфейса. Компоненты берут их через var(--...),
+   поэтому на шаге 7 внешний вид под web.max.ru меняется только здесь */
+:root {
+	--color-bg: #f1f2f4;
+	--color-surface: #ffffff;
+	--color-text: #1c1c1e;
+	--color-text-secondary: #6b6f76;
+	--color-border: #dcdfe4;
+	--color-accent: #2d7ff9;
+	--color-accent-hover: #1f6ee6;
+	--color-accent-soft: rgb(45 127 249 / 20%);
+	--color-on-accent: #ffffff;
+	--color-error: #c62828;
+	--color-error-bg: #fdecea;
+
+	--radius: 8px;
+	--radius-lg: 16px;
+	--shadow: 0 2px 12px rgb(0 0 0 / 8%);
+
+	--font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* 9. Общий шрифт, цвет текста и фон страницы */
+body {
+	font-family: var(--font-family);
+	color: var(--color-text);
+	background: var(--color-bg);
 }
