@@ -14,12 +14,12 @@
 	--color-error: #c62828;
 	--color-error-bg: #fdecea;
 
-	/* Чат */
+	/* Названия описывают роль цвета, а не место в интерфейсе:
+	   ui ничего не знает о чате, поэтому здесь нет «пузырей» и «фона переписки» */
+	--color-bg-alt: #e9edf2;
 	--color-hover: #f4f5f7;
 	--color-active: #e6effe;
-	--color-chat-bg: #e9edf2;
-	--color-bubble-in: #ffffff;
-	--color-bubble-out: #d7e7ff;
+	--color-accent-subtle: #d7e7ff;
 
 	--radius: 8px;
 	--radius-lg: 16px;

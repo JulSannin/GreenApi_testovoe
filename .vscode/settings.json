@@ -1,0 +1,6 @@
+{
+	// Автоимпорт вставляет пути через алиас @/ (например, @/ui), а не ../../ui:
+	// правила ESLint запрещают импорт через ../ (см. eslint.config.js)
+	"typescript.preferences.importModuleSpecifier": "non-relative",
+	"javascript.preferences.importModuleSpecifier": "non-relative"
+}

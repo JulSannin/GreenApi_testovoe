@@ -1,5 +1,5 @@
-// Шапка переписки: номер собеседника. На телефоне ещё кнопка «Назад» к списку чатов.
-// Только показ: что делает «Назад», решает модуль через onBack.
+// Шапка переписки: номер собеседника и, если передан onBack, кнопка «Назад».
+// Только показ: когда нужна «Назад» и что она делает, решает страница.
 
 import type { Chat } from '@/store/types';
 import { IconButton, PanelHeader } from '@/ui';
@@ -8,7 +8,8 @@ import styles from './ChatHeader.module.css';
 
 type Props = {
 	chat: Chat;
-	onBack: () => void;
+	// Нет onBack — нет и кнопки «Назад»
+	onBack?: () => void;
 };
 
 export function ChatHeader({ chat, onBack }: Props) {
@@ -16,9 +17,8 @@ export function ChatHeader({ chat, onBack }: Props) {
 		<PanelHeader
 			title={chatTitle(chat)}
 			before={
-				// Обёртка прячет кнопку на компьютере — см. ChatHeader.module.css
-				<div className={styles.back}>
-					<IconButton label="Назад к списку чатов" onClick={onBack}>
+				onBack && (
+					<IconButton className={styles.back} label="Назад к списку чатов" onClick={onBack}>
 						<svg viewBox="0 0 24 24" width="24" height="24" fill="none" aria-hidden="true">
 							<path
 								d="M15 18l-6-6 6-6"
@@ -29,7 +29,7 @@ export function ChatHeader({ chat, onBack }: Props) {
 							/>
 						</svg>
 					</IconButton>
-				</div>
+				)
 			}
 		/>
 	);

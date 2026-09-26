@@ -1,3 +1,4 @@
+import { readdirSync } from 'node:fs';
 import js from '@eslint/js';
 import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';
@@ -29,6 +30,21 @@ const NO_DEEP_MODULE_IMPORT = {
 	message: 'Модуль импортируется только через его index.ts: @/modules/<имя>',
 };
 
+// Внутри слоя свой index.ts не импортируем: он импортирует нас же, получится цикл
+function noOwnIndex(path) {
+	return {
+		regex: `^@/${path}$`,
+		message: `Внутри слоя импортируйте файл напрямую (например, @/${path}/<Имя>/<Имя>), а не через @/${path}: иначе получится циклический импорт через index.ts`,
+	};
+}
+
+// Папки модулей: для каждого — своё правило «чужие модули нельзя, свой можно»
+const moduleNames = readdirSync(new URL('./src/modules', import.meta.url), {
+	withFileTypes: true,
+})
+	.filter((entry) => entry.isDirectory())
+	.map((entry) => entry.name);
+
 function restrictImports(...patterns) {
 	return {
 		// Версия правила из typescript-eslint: умеет разрешать импорт только типов (allowTypeImports)
@@ -47,6 +63,7 @@ const layerRules = [
 				['app', 'pages', 'modules', 'components', 'api', 'store', 'utils'],
 				'ui ничего не знает о приложении: только React и другие ui-компоненты',
 			),
+			noOwnIndex('ui'),
 		),
 	},
 	{
@@ -59,22 +76,31 @@ const layerRules = [
 			layers(['store'], 'components не работают со стором — можно только типы (import type)', {
 				allowTypeImports: true,
 			}),
+			noOwnIndex('components'),
 		),
 	},
-	{
-		files: ['src/modules/**/*.{ts,tsx}'],
+	// Для каждого модуля отдельно: свои файлы можно импортировать и через ./, и через
+	// @/modules/<свой>/<файл> (так вставляет автоимпорт VS Code), а чужие модули — нельзя
+	...moduleNames.map((name) => ({
+		files: [`src/modules/${name}/**/*.{ts,tsx}`],
 		rules: restrictImports(
 			layers(['app', 'pages'], 'Модуль не знает, на какой странице и в каком приложении стоит'),
-			layers(
-				['modules'],
-				'Модули не импортируют друг друга (внутри модуля — через ./). Связывает модули страница',
-			),
+			{
+				// Любой @/modules/..., кроме своего модуля
+				regex: `^@/modules/(?!${name}(/|$))`,
+				message:
+					'Модули не импортируют друг друга. Связывает модули страница — через props и children',
+			},
+			noOwnIndex(`modules/${name}`),
 		),
-	},
+	})),
 	{
 		files: ['src/pages/**/*.{ts,tsx}'],
 		rules: restrictImports(
-			layers(['app', 'api'], 'Страница собирает модули; запросы к API — внутри модулей'),
+			layers(
+				['app', 'pages', 'api'],
+				'Страница собирает модули: другие страницы и запросы к API ей не нужны',
+			),
 			NO_DEEP_MODULE_IMPORT,
 		),
 	},

@@ -10,3 +10,4 @@ export { IconButton } from './IconButton/IconButton';
 export { Input } from './Input/Input';
 export { PanelHeader } from './PanelHeader/PanelHeader';
 export { TextField } from './TextField/TextField';
+export { useMediaQuery } from './useMediaQuery';
