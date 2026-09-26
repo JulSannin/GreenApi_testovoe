@@ -2,7 +2,7 @@
 // а результат читается оттуда же.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Credentials } from '../api/types';
+import type { Credentials } from '@/api/types';
 import { INTERRUPTED_SEND_ERROR, useChatStore } from './chatStore';
 import type { Message } from './types';
 

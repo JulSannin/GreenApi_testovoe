@@ -1,0 +1,29 @@
+.form {
+	display: flex;
+	align-items: flex-end;
+	gap: 8px;
+	padding: 10px 16px;
+	background: var(--color-surface);
+	border-top: 1px solid var(--color-border);
+}
+
+.textarea {
+	flex: 1;
+	min-width: 0;
+	/* Поле растёт вместе с текстом до 160px, дальше появляется прокрутка.
+	   Браузеры без поддержки field-sizing оставят одну строку с прокруткой */
+	field-sizing: content;
+	max-height: 160px;
+	padding: 10px 14px;
+	border: 1px solid var(--color-border);
+	border-radius: 20px;
+	background: var(--color-surface);
+	color: inherit;
+	line-height: 1.4;
+	resize: none;
+}
+
+.textarea:focus {
+	outline: none;
+	border-color: var(--color-accent);
+}

@@ -1,0 +1,16 @@
+/* margin: auto — в flex-контейнере заглушка встаёт по центру свободного места */
+.empty {
+	margin: auto;
+	color: var(--color-text-secondary);
+	text-align: center;
+}
+
+.plain {
+	padding: 24px 16px;
+}
+
+.pill {
+	padding: 8px 14px;
+	border-radius: var(--radius-lg);
+	background: var(--color-surface);
+}

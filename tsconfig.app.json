@@ -16,6 +16,12 @@
 		"noEmit": true,
 		"jsx": "react-jsx",
 
+		/* Алиас @/ → src/: импорт между слоями — '@/modules/auth' вместо '../../modules/auth'.
+		   Vite читает эти пути сам (resolve.tsconfigPaths в vite.config.ts) */
+		"paths": {
+			"@/*": ["./src/*"]
+		},
+
 		/* Linting */
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,

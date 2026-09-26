@@ -1,0 +1,14 @@
+.error {
+	color: var(--color-error);
+}
+
+.inline {
+	font-size: 13px;
+}
+
+.block {
+	padding: 10px 12px;
+	border-radius: var(--radius);
+	background: var(--color-error-bg);
+	font-size: 14px;
+}

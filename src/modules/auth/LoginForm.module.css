@@ -1,0 +1,33 @@
+/* Карточка с формой. Где она стоит на экране, решает страница */
+.card {
+	width: 100%;
+	max-width: 400px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 32px 24px;
+	background: var(--color-surface);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow);
+}
+
+.title {
+	font-size: 24px;
+	font-weight: 600;
+}
+
+.subtitle {
+	color: var(--color-text-secondary);
+}
+
+.hint {
+	font-size: 13px;
+	color: var(--color-text-secondary);
+	text-align: center;
+}
+
+.hint a {
+	color: var(--color-accent);
+	/* Не разрывать адрес на дефисе */
+	white-space: nowrap;
+}

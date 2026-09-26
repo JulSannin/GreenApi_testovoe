@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Chat } from '../store/types';
+import type { Chat } from '@/store/types';
 import { chatTitle, formatChatTime, formatPhone, formatTime } from './format';
 
 describe('formatPhone', () => {

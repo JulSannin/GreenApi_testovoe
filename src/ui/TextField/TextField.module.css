@@ -1,0 +1,10 @@
+.field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.label {
+	font-size: 14px;
+	color: var(--color-text-secondary);
+}

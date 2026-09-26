@@ -1,0 +1,12 @@
+/* На компьютере список чатов виден всегда — кнопка «Назад» не нужна */
+.back {
+	display: none;
+	margin-left: -8px;
+}
+
+/* 700px — та же граница, что в pages/ChatPage/ChatPage.module.css */
+@media (max-width: 700px) {
+	.back {
+		display: block;
+	}
+}

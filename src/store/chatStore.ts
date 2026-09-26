@@ -5,8 +5,8 @@
 import { useMemo } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Credentials } from '../api/types';
-import { isValidPhone, normalizePhone, toChatId } from '../utils/phone';
+import type { Credentials } from '@/api/types';
+import { isValidPhone, normalizePhone, toChatId } from '@/utils/phone';
 import type { Chat, Message } from './types';
 
 type ChatState = {
