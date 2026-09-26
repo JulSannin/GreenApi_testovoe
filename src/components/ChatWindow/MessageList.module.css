@@ -1,0 +1,17 @@
+.list {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 16px;
+}
+
+.empty {
+	margin: auto;
+	padding: 8px 14px;
+	border-radius: var(--radius-lg);
+	background: var(--color-surface);
+	color: var(--color-text-secondary);
+}

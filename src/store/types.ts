@@ -18,11 +18,20 @@ export type Chat = {
 // 'in' — входящее от собеседника, 'out' — отправленное нами
 export type MessageDirection = 'in' | 'out';
 
+// Статус исходящего сообщения:
+// 'sending' — показано сразу, ждём ответа сервера; 'sent' — сервер принял; 'failed' — не отправлено
+export type MessageStatus = 'sending' | 'sent' | 'failed';
+
 export type Message = {
-	// idMessage от GREEN-API — по нему отсекаются дубли
+	// idMessage от GREEN-API — по нему отсекаются дубли.
+	// Пока исходящее отправляется, здесь временный id вида 'local-...'
 	id: string;
 	text: string;
 	direction: MessageDirection;
 	// В миллисекундах. GREEN-API присылает timestamp в секундах — при разборе умножаем на 1000
 	timestamp: number;
+	// Только у исходящих; у входящих поля нет
+	status?: MessageStatus;
+	// Текст ошибки для status: 'failed'
+	error?: string;
 };

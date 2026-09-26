@@ -1,0 +1,74 @@
+.row {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.out {
+	align-items: flex-end;
+}
+
+.in {
+	align-items: flex-start;
+}
+
+.bubble {
+	max-width: min(75%, 560px);
+	padding: 6px 10px 4px 12px;
+	border-radius: 16px;
+	box-shadow: 0 1px 1px rgb(0 0 0 / 6%);
+}
+
+/* Хвостик пузыря — к краю, с которого пришло сообщение */
+.out .bubble {
+	background: var(--color-bubble-out);
+	border-bottom-right-radius: 4px;
+}
+
+.in .bubble {
+	background: var(--color-bubble-in);
+	border-bottom-left-radius: 4px;
+}
+
+.failed {
+	outline: 1px solid var(--color-error);
+}
+
+/* pre-wrap — сохраняем переносы строк из сообщения; anywhere — длинная ссылка не вылезет за пузырь */
+.text {
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+.meta {
+	display: flex;
+	justify-content: flex-end;
+	gap: 4px;
+	font-size: 11px;
+	color: var(--color-text-secondary);
+}
+
+.failure {
+	max-width: min(75%, 560px);
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	align-items: baseline;
+	gap: 4px 12px;
+	font-size: 13px;
+	color: var(--color-error);
+	text-align: right;
+}
+
+.action {
+	padding: 0;
+	border: none;
+	background: none;
+	color: var(--color-accent);
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.action:hover {
+	text-decoration: underline;
+}

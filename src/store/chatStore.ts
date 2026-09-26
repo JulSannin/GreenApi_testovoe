@@ -26,6 +26,9 @@ type ChatActions = {
 	createChat: (phone: string) => string | null;
 	setActiveChat: (chatKey: string | null) => void;
 	addMessage: (chatKey: string, chatId: string, message: Message) => void;
+	updateMessage: (chatKey: string, messageId: string, patch: Partial<Message>) => void;
+	confirmMessage: (chatKey: string, localId: string, idMessage: string) => void;
+	removeMessage: (chatKey: string, messageId: string) => void;
 };
 
 const initialState: ChatState = {
@@ -34,6 +37,23 @@ const initialState: ChatState = {
 	messages: {},
 	activeChatId: null,
 };
+
+// Текст для сообщений, отправка которых оборвалась перезагрузкой страницы
+export const INTERRUPTED_SEND_ERROR =
+	'Отправка прервалась. Сообщение могло уйти — проверьте переписку в MAX перед повторной отправкой';
+
+// Сообщения со статусом 'sending' после перезагрузки страницы помечаются неотправленными:
+// ответа сервера на них уже не будет, и без этого они навсегда остались бы «отправляется»
+function failInterruptedMessages(messages: Record<string, Message[]>): Record<string, Message[]> {
+	return Object.fromEntries(
+		Object.entries(messages).map(([chatKey, list]) => [
+			chatKey,
+			list.map((m) =>
+				m.status === 'sending' ? { ...m, status: 'failed', error: INTERRUPTED_SEND_ERROR } : m,
+			),
+		]),
+	);
+}
 
 // create<Тип>()(...) — двойные скобки нужны Zustand для правильного вывода типов вместе с persist
 export const useChatStore = create<ChatState & ChatActions>()(
@@ -101,10 +121,72 @@ export const useChatStore = create<ChatState & ChatActions>()(
 						messages: { ...state.messages, [chatKey]: [...current, message] },
 					};
 				}),
+
+			/**
+			 * Меняет поля сообщения, например статус: 'failed' → 'sending' при повторной отправке.
+			 * Если сообщения нет (скажем, пользователь вышел, пока шла отправка) — ничего не делает.
+			 */
+			updateMessage: (chatKey, messageId, patch) =>
+				set((state) => {
+					const list = state.messages[chatKey];
+					if (!list?.some((m) => m.id === messageId)) return state;
+					return {
+						messages: {
+							...state.messages,
+							[chatKey]: list.map((m) => (m.id === messageId ? { ...m, ...patch } : m)),
+						},
+					};
+				}),
+
+			/**
+			 * Сервер принял сообщение: заменяем временный id настоящим idMessage и ставим статус 'sent'.
+			 * Если сообщение с таким idMessage уже есть (успело прийти уведомлением) — временное удаляем,
+			 * чтобы не было дубля.
+			 */
+			confirmMessage: (chatKey, localId, idMessage) =>
+				set((state) => {
+					const list = state.messages[chatKey];
+					if (!list?.some((m) => m.id === localId)) return state;
+
+					const alreadyKnown = list.some((m) => m.id === idMessage);
+					return {
+						messages: {
+							...state.messages,
+							[chatKey]: alreadyKnown
+								? list.filter((m) => m.id !== localId)
+								: list.map((m) =>
+										m.id === localId
+											? { ...m, id: idMessage, status: 'sent', error: undefined }
+											: m,
+									),
+						},
+					};
+				}),
+
+			// Удаляет сообщение из чата (кнопка «Удалить» у неотправленного)
+			removeMessage: (chatKey, messageId) =>
+				set((state) => {
+					const list = state.messages[chatKey];
+					if (!list?.some((m) => m.id === messageId)) return state;
+					return {
+						messages: { ...state.messages, [chatKey]: list.filter((m) => m.id !== messageId) },
+					};
+				}),
 		}),
 		{
 			// Ключ в localStorage
 			name: 'green-api-chat',
+			// Как соединить сохранённое состояние с начальным при загрузке страницы.
+			// По умолчанию — просто { ...начальное, ...сохранённое }; дополнительно помечаем
+			// прерванные отправки неотправленными
+			merge: (persisted, current) => {
+				const saved = persisted as Partial<ChatState> | undefined;
+				return {
+					...current,
+					...saved,
+					messages: failInterruptedMessages(saved?.messages ?? current.messages),
+				};
+			},
 		},
 	),
 );
@@ -119,6 +201,12 @@ const EMPTY_MESSAGES: Message[] = [];
 // Сообщения чата; для несуществующего чата или null — пустой массив
 export function useChatMessages(chatKey: string | null): Message[] {
 	return useChatStore((state) => (chatKey ? state.messages[chatKey] : undefined) ?? EMPTY_MESSAGES);
+}
+
+// Последнее сообщение чата для строки списка. at(-1) возвращает уже существующий объект,
+// поэтому новых объектов не создаётся
+export function useLastMessage(chatKey: string): Message | undefined {
+	return useChatStore((state) => state.messages[chatKey]?.at(-1));
 }
 
 // Открытый чат или null

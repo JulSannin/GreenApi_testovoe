@@ -1,6 +1,7 @@
 // Проверка данных входа перед тем, как пустить пользователя в чат.
 // Логика вынесена из компонента, чтобы её можно было протестировать без React.
 
+import { describeServerStatus, isNetworkError, isTimeoutError } from '../../api/errorMessages';
 import { ApiError, getStateInstance } from '../../api/greenApi';
 import type { Credentials, StateInstance } from '../../api/types';
 
@@ -79,28 +80,20 @@ function describeRequestError(error: unknown): string {
 		if ([400, 401, 403, 404].includes(error.status)) {
 			return 'Неверные данные: проверьте apiUrl, idInstance и apiTokenInstance';
 		}
-		if (error.status === 429) {
-			return 'Слишком много запросов, попробуйте через минуту';
-		}
-		if (error.status >= 500) {
-			return 'Сервер GREEN-API недоступен, попробуйте позже';
-		}
 		// Сервер ответил «успешно», но не JSON — скорее всего, apiUrl указывает на чужой сайт
 		if (error.status >= 200 && error.status < 300) {
 			return 'Неожиданный ответ сервера: проверьте apiUrl';
 		}
-		// Остальные коды (405, 466 и т. п.) показываем как есть — по ним легче найти причину
-		return `Ошибка сервера GREEN-API (код ${error.status})`;
+		// 429 и 5xx описываются одинаково для всех запросов;
+		// остальные коды (405, 466 и т. п.) показываем как есть — по ним легче найти причину
+		return describeServerStatus(error.status) ?? `Ошибка сервера GREEN-API (код ${error.status})`;
 	}
 
-	// Так завершается запрос, оборванный по AbortSignal.timeout
-	if (error instanceof DOMException && error.name === 'TimeoutError') {
+	if (isTimeoutError(error)) {
 		return 'Сервер не отвечает: проверьте apiUrl и подключение к интернету';
 	}
 
-	// fetch бросает TypeError, если запрос вообще не дошёл до сервера:
-	// нет интернета, неверный адрес, сервер не разрешил запрос из браузера (CORS)
-	if (error instanceof TypeError) {
+	if (isNetworkError(error)) {
 		return 'Не удалось связаться с сервером: проверьте apiUrl и подключение к интернету';
 	}
 

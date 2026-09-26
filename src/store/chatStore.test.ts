@@ -3,7 +3,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Credentials } from '../api/types';
-import { useChatStore } from './chatStore';
+import { INTERRUPTED_SEND_ERROR, useChatStore } from './chatStore';
 import type { Message } from './types';
 
 const credentials: Credentials = {
@@ -162,6 +162,73 @@ describe('addMessage', () => {
 	});
 });
 
+describe('updateMessage', () => {
+	it('меняет поля сообщения', () => {
+		store().addMessage('79991234567', '79991234567@c.us', message({ id: 'a', status: 'sending' }));
+
+		store().updateMessage('79991234567', 'a', { status: 'failed', error: 'Ошибка' });
+
+		expect(store().messages['79991234567'][0]).toMatchObject({ status: 'failed', error: 'Ошибка' });
+	});
+
+	it('для несуществующего сообщения ничего не меняет', () => {
+		const before = store();
+
+		store().updateMessage('79991234567', 'нет-такого', { status: 'failed' });
+
+		expect(store()).toBe(before);
+	});
+});
+
+describe('confirmMessage', () => {
+	it('заменяет временный id на idMessage и ставит статус sent', () => {
+		store().addMessage(
+			'79991234567',
+			'79991234567@c.us',
+			message({ id: 'local-1', status: 'sending' }),
+		);
+
+		store().confirmMessage('79991234567', 'local-1', 'BAE5');
+
+		expect(store().messages['79991234567']).toEqual([
+			expect.objectContaining({ id: 'BAE5', status: 'sent' }),
+		]);
+	});
+
+	it('убирает временное сообщение, если такое idMessage уже есть', () => {
+		store().addMessage(
+			'79991234567',
+			'79991234567@c.us',
+			message({ id: 'local-1', status: 'sending' }),
+		);
+		store().addMessage('79991234567', '79991234567@c.us', message({ id: 'BAE5', status: 'sent' }));
+
+		store().confirmMessage('79991234567', 'local-1', 'BAE5');
+
+		expect(store().messages['79991234567'].map((m) => m.id)).toEqual(['BAE5']);
+	});
+
+	it('после выхода из аккаунта ничего не делает', () => {
+		store().logout();
+		const before = store();
+
+		store().confirmMessage('79991234567', 'local-1', 'BAE5');
+
+		expect(store()).toBe(before);
+	});
+});
+
+describe('removeMessage', () => {
+	it('удаляет сообщение из чата', () => {
+		store().addMessage('79991234567', '79991234567@c.us', message({ id: 'a' }));
+		store().addMessage('79991234567', '79991234567@c.us', message({ id: 'b' }));
+
+		store().removeMessage('79991234567', 'a');
+
+		expect(store().messages['79991234567'].map((m) => m.id)).toEqual(['b']);
+	});
+});
+
 describe('сохранение в localStorage', () => {
 	// persist берёт хранилище из window.localStorage, а в Node нет window —
 	// без подмены сохранение в тестах молча отключено.
@@ -217,5 +284,22 @@ describe('сохранение в localStorage', () => {
 
 		expect(after.getState().credentials).toBeNull();
 		expect(after.getState().chats).toEqual({});
+	});
+
+	it('после перезагрузки помечает прерванные отправки неотправленными', async () => {
+		const before = await reloadStore();
+		before
+			.getState()
+			.addMessage('79991234567', '79991234567@c.us', message({ id: 'local-1', status: 'sending' }));
+		before
+			.getState()
+			.addMessage('79991234567', '79991234567@c.us', message({ id: 'BAE5', status: 'sent' }));
+
+		const after = await reloadStore();
+
+		expect(after.getState().messages['79991234567']).toEqual([
+			expect.objectContaining({ id: 'local-1', status: 'failed', error: INTERRUPTED_SEND_ERROR }),
+			expect.objectContaining({ id: 'BAE5', status: 'sent' }),
+		]);
 	});
 });

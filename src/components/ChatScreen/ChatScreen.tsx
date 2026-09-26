@@ -1,24 +1,29 @@
-// Экран чата. Пока только шапка с кнопкой выхода —
-// список чатов и окно переписки появятся на шаге 5.
+// Экран чата: слева список чатов, справа открытая переписка.
+// На узком экране (телефон) видна только одна часть: список, а после выбора чата — переписка.
 
-import { useChatStore } from '../../store/chatStore';
+import { useActiveChat } from '../../store/chatStore';
+import { ChatWindow } from '../ChatWindow/ChatWindow';
+import { Sidebar } from '../Sidebar/Sidebar';
 import styles from './ChatScreen.module.css';
 
 export function ChatScreen() {
-	const idInstance = useChatStore((state) => state.credentials?.idInstance);
-	const logout = useChatStore((state) => state.logout);
+	const activeChat = useActiveChat();
 
 	return (
-		<div className={styles.screen}>
-			<header className={styles.header}>
-				<span className={styles.instance}>Инстанс {idInstance}</span>
-				{/* logout очищает стор, и App сам вернёт экран входа */}
-				<button className={styles.logout} type="button" onClick={logout}>
-					Выйти
-				</button>
-			</header>
+		// Класс chatOpen говорит CSS, что на телефоне нужно показать переписку, а не список
+		<div className={`${styles.screen} ${activeChat ? styles.chatOpen : ''}`}>
+			<aside className={styles.sidebar}>
+				<Sidebar />
+			</aside>
 
-			<main className={styles.placeholder}>Здесь будут чаты</main>
+			<main className={styles.main}>
+				{activeChat ? (
+					// key: при переключении чата окно создаётся заново — сбрасываются поле ввода и прокрутка
+					<ChatWindow key={activeChat.id} chat={activeChat} />
+				) : (
+					<p className={styles.placeholder}>Выберите чат или создайте новый</p>
+				)}
+			</main>
 		</div>
 	);
 }

@@ -1,0 +1,7 @@
+/* Шапка и поле ввода — по своей высоте, лента занимает всё остальное */
+.window {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+}
