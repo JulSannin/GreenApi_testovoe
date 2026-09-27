@@ -13,7 +13,8 @@
 
 /* 3. Настраиваем общие параметры для тела страницы */
 body {
-	line-height: 1.5;
+	/* Высота строки MAX UI: 20px на 16px текста */
+	line-height: 1.25;
 	-webkit-font-smoothing: antialiased;
 	/* 100dvh — видимая высота экрана с учётом панелей мобильного браузера.
 	   100vh на телефоне больше видимой области, и страница начинает прокручиваться */
@@ -58,6 +59,21 @@ h6 {
 /* 8. Общий шрифт, цвет текста и фон страницы. Переменные --... объявлены в ui/theme.css */
 body {
 	font-family: var(--font-family);
+	font-size: var(--font-size-body);
 	color: var(--color-text);
 	background: var(--color-bg);
+}
+
+/* 9. Рамка фокуса с клавиатуры — одна для всех кнопок, ссылок и строк списка.
+   Поля ввода рисуют свою рамку сами (ui/Input, поле сообщения) */
+:focus-visible {
+	outline: 2px solid var(--color-focus);
+	outline-offset: 2px;
+}
+
+/* 10. Тонкие полосы прокрутки в цвет темы (Chrome 121+, Firefox; в остальных — обычные).
+   scrollbar-width не наследуется, поэтому задаём его всем элементам */
+* {
+	scrollbar-width: thin;
+	scrollbar-color: var(--color-icon-muted) transparent;
 }

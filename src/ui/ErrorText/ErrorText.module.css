@@ -3,12 +3,14 @@
 }
 
 .inline {
-	font-size: 13px;
+	font-size: var(--font-size-caption);
+	line-height: var(--line-height-caption);
 }
 
 .block {
 	padding: 10px 12px;
 	border-radius: var(--radius);
 	background: var(--color-error-bg);
-	font-size: 14px;
+	font-size: var(--font-size-detail);
+	line-height: var(--line-height-detail);
 }

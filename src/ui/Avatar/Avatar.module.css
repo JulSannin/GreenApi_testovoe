@@ -1,11 +1,57 @@
+/* По аватарам MAX UI: белые буквы на градиенте или серая иконка на сером фоне */
 .avatar {
 	flex-shrink: 0;
-	width: 44px;
-	height: 44px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	border-radius: 50%;
-	background: var(--color-accent-soft);
-	color: var(--color-accent);
+	overflow: hidden;
+	color: var(--color-on-accent);
+	font-weight: 600;
+	/* Буквы не выделяются при выделении текста строки */
+	user-select: none;
+}
+
+.lg {
+	width: 48px;
+	height: 48px;
+	font-size: var(--font-size-title);
+}
+
+.md {
+	width: 40px;
+	height: 40px;
+	font-size: var(--font-size-detail);
+}
+
+.icon {
+	background: var(--color-field);
+	color: var(--color-icon-muted);
+}
+
+/* Иконка — половина аватара */
+.icon svg {
+	width: 50%;
+	height: 50%;
+}
+
+/* Номер цвета выбирает avatarTone.ts; их столько же, сколько градиентов в theme.css */
+.tone1 {
+	background: var(--avatar-gradient-1);
+}
+
+.tone2 {
+	background: var(--avatar-gradient-2);
+}
+
+.tone3 {
+	background: var(--avatar-gradient-3);
+}
+
+.tone4 {
+	background: var(--avatar-gradient-4);
+}
+
+.tone5 {
+	background: var(--avatar-gradient-5);
 }

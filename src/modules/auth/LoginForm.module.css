@@ -6,28 +6,33 @@
 	flex-direction: column;
 	gap: 16px;
 	padding: 32px 24px;
-	background: var(--color-surface);
+	background: var(--color-card);
 	border-radius: var(--radius-lg);
 	box-shadow: var(--shadow);
 }
 
 .title {
-	font-size: 24px;
+	font-size: var(--font-size-header);
+	line-height: var(--line-height-header);
 	font-weight: 600;
 }
 
 .subtitle {
+	margin-top: 4px;
+	font-size: var(--font-size-detail);
+	line-height: var(--line-height-detail);
 	color: var(--color-text-secondary);
 }
 
 .hint {
-	font-size: 13px;
+	font-size: var(--font-size-caption);
+	line-height: var(--line-height-caption);
 	color: var(--color-text-secondary);
 	text-align: center;
 }
 
 .hint a {
-	color: var(--color-accent);
+	color: var(--color-accent-text);
 	/* Не разрывать адрес на дефисе */
 	white-space: nowrap;
 }

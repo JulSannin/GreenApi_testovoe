@@ -2,28 +2,39 @@
 	display: flex;
 	align-items: flex-end;
 	gap: 8px;
-	padding: 10px 16px;
+	padding: 8px 12px;
 	background: var(--color-surface);
 	border-top: 1px solid var(--color-border);
 }
 
+/* Поле как Textarea из MAX UI: на сером фоне, без видимой рамки */
 .textarea {
 	flex: 1;
 	min-width: 0;
 	/* Поле растёт вместе с текстом до 160px, дальше появляется прокрутка.
 	   Браузеры без поддержки field-sizing оставят одну строку с прокруткой */
 	field-sizing: content;
+	/* Одна строка — 40px, вровень с кнопкой «Отправить» */
+	min-height: 40px;
 	max-height: 160px;
-	padding: 10px 14px;
-	border: 1px solid var(--color-border);
-	border-radius: 20px;
-	background: var(--color-surface);
+	padding: 9px 14px;
+	/* Прозрачная рамка видна только в режиме высокой контрастности Windows */
+	border: 1px solid transparent;
+	border-radius: var(--radius-lg);
+	background: var(--color-field);
 	color: inherit;
-	line-height: 1.4;
+	font-size: var(--font-size-body);
+	line-height: var(--line-height-body);
 	resize: none;
 }
 
+/* opacity: 1 — Firefox по умолчанию делает подсказку полупрозрачной */
+.textarea::placeholder {
+	color: var(--color-text-secondary);
+	opacity: 1;
+}
+
 .textarea:focus {
-	outline: none;
-	border-color: var(--color-accent);
+	outline: 2px solid var(--color-focus);
+	outline-offset: 0;
 }

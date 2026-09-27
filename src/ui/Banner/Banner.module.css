@@ -4,8 +4,9 @@
 	display: flex;
 	align-items: center;
 	gap: 12px;
-	padding: 10px 16px;
-	font-size: 14px;
+	padding: 8px 16px;
+	font-size: var(--font-size-detail);
+	line-height: var(--line-height-detail);
 }
 
 .text {

@@ -1,17 +1,30 @@
+/* Поле по образцу MAX UI: без видимой рамки, на сером фоне */
 .input {
 	width: 100%;
 	min-width: 0;
-	padding: 10px 12px;
-	border: 1px solid var(--color-border);
+	height: 40px;
+	padding: 0 12px;
+	/* Рамка прозрачная: поле видно по фону. Нужна она для ошибки (ниже) и для режима
+	   высокой контрастности Windows — там прозрачная рамка становится видимой */
+	border: 1px solid transparent;
 	border-radius: var(--radius);
-	background: var(--color-surface);
+	background: var(--color-field);
 	color: inherit;
+	font-size: var(--font-size-detail);
+	line-height: var(--line-height-detail);
 }
 
+/* Подсказка — второстепенным цветом: у третичного из MAX UI контраст ниже 4.5:1.
+   opacity: 1 — Firefox по умолчанию делает подсказку полупрозрачной */
+.input::placeholder {
+	color: var(--color-text-secondary);
+	opacity: 1;
+}
+
+/* Фокус — кольцом вокруг поля (любым способом, не только с клавиатуры: в поле печатают) */
 .input:focus {
-	outline: none;
-	border-color: var(--color-accent);
-	box-shadow: 0 0 0 3px var(--color-accent-soft);
+	outline: 2px solid var(--color-focus);
+	outline-offset: 0;
 }
 
 .input[aria-invalid='true'] {
@@ -20,4 +33,13 @@
 
 .input:disabled {
 	opacity: 0.6;
+}
+
+/* Крупное поле — на экране входа */
+.large {
+	height: 52px;
+	padding: 0 16px;
+	border-radius: var(--radius-lg);
+	font-size: var(--font-size-body);
+	line-height: var(--line-height-body);
 }

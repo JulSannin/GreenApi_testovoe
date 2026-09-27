@@ -1,6 +1,7 @@
 // Кнопка с текстом.
-// primary — главное действие («Войти», «Создать»), secondary — второстепенное («Выйти»),
+// primary — главное действие («Войти»), secondary — второстепенное («Выйти»),
 // link — выглядит как ссылка («Повторить», «Удалить» под сообщением).
+// Размеры по MAX UI: md — 52px (форма входа), sm — 40px, xs — 32px (плашки, шапка).
 
 import type { ComponentProps } from 'react';
 import { cx } from '@/ui/cx';
@@ -8,7 +9,7 @@ import styles from './Button.module.css';
 
 type Props = ComponentProps<'button'> & {
 	variant?: 'primary' | 'secondary' | 'link';
-	size?: 'md' | 'sm';
+	size?: 'md' | 'sm' | 'xs';
 	// Растянуть на всю ширину родителя
 	fullWidth?: boolean;
 };

@@ -9,8 +9,9 @@
 	padding: 24px 16px;
 }
 
+/* Плашка поверх подложки (ленты сообщений) */
 .pill {
 	padding: 8px 14px;
 	border-radius: var(--radius-lg);
-	background: var(--color-surface);
+	background: var(--color-card);
 }

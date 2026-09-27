@@ -1,34 +1,137 @@
 /* Цвета и размеры интерфейса. Компоненты берут их через var(--...),
-   поэтому на шаге 7 внешний вид под web.max.ru меняется только здесь.
-   Файл принадлежит слою ui: базовые компоненты зависят только от этих переменных */
+   поэтому внешний вид меняется только здесь.
+   Файл принадлежит слою ui: базовые компоненты зависят только от этих переменных.
+
+   Значения — из дизайн-системы MAX: библиотеки MAX UI (@maxhub/max-ui 0.5.0, MIT,
+   https://dev.max.ru/ui). Сама библиотека не подключена, перенесены только значения.
+   Пометка «подобрано» — такого значения в MAX UI нет или оно не проходит по контрасту:
+   цвет выбран так, чтобы текст читался не хуже 4.5:1 на всех фонах, где он стоит.
+
+   Названия описывают роль цвета, а не место в интерфейсе:
+   ui ничего не знает о чате, поэтому здесь нет «пузырей» и «фона переписки» */
 :root {
-	--color-bg: #f1f2f4;
+	/* Системные части страницы (полосы прокрутки, автозаполнение полей) — в цвет темы */
+	color-scheme: light dark;
+
+	/* Подложка: фон страницы и ленты сообщений */
+	--color-bg: #edeef2;
+	/* Панели: список чатов, шапки, поле ввода */
 	--color-surface: #ffffff;
-	--color-text: #1c1c1e;
-	--color-text-secondary: #6b6f76;
-	--color-border: #dcdfe4;
-	--color-accent: #2d7ff9;
-	--color-accent-hover: #1f6ee6;
-	--color-accent-soft: rgb(45 127 249 / 20%);
+	/* Карточки поверх подложки: сообщения собеседника, плашки дат, карточка входа */
+	--color-card: #ffffff;
+
+	--color-text: #060708;
+	/* Подписи, время, подсказки в пустых полях */
+	--color-text-secondary: rgb(6 7 8 / 68%);
+	/* Линии между частями экрана: под шапками, над полем ввода, справа от списка чатов */
+	--color-border: rgb(12 13 14 / 16%);
+
+	/* Затемнение под курсором и при нажатии — поверх любого фона */
+	--color-hover: hsl(0 0% 5% / 4%);
+	--color-pressed: hsl(0 0% 5% / 8%);
+	/* Фон полей ввода, второстепенных кнопок и аватара без букв */
+	--color-field: rgb(9 9 9 / 5%);
+	/* Иконка в аватаре без букв, ползунок прокрутки */
+	--color-icon-muted: #bcbdbe;
+
+	/* Заливка главных кнопок. В MAX UI — #007aff, но белый текст на нём даёт только 4.02:1,
+	   поэтому берём оттенок MAX для нажатой кнопки */
+	--color-accent: #006ee5;
+	/* При наведении кнопка темнеет (в MAX UI светлеет — но тогда белый текст хуже читается).
+	   Подобрано */
+	--color-accent-hover: #0062cc;
+	/* Акцентный цвет для текста и иконок: ссылки, кнопки-иконки. Подобрано */
+	--color-accent-text: #0062cc;
+	/* Кольцо фокуса у полей и кнопок */
+	--color-focus: #006ee5;
+	/* Текст и иконки на акцентной или цветной заливке */
 	--color-on-accent: #ffffff;
-	--color-error: #c62828;
+	/* Мягкий акцентный фон: свои сообщения, информационная плашка. Подобрано */
+	--color-accent-subtle: #d6eaff;
+	/* Выбранная строка списка. Подобрано */
+	--color-active: #e0efff;
+
+	/* Ошибки. У #ff303c из MAX UI на подложке только 3.16:1. Подобрано */
+	--color-error: #d0202b;
 	--color-error-bg: #fdecea;
+	/* Предупреждения. В MAX UI их нет. Подобрано */
 	--color-warning: #7a4d00;
 	--color-warning-bg: #fff4e0;
 
-	/* Названия описывают роль цвета, а не место в интерфейсе:
-	   ui ничего не знает о чате, поэтому здесь нет «пузырей» и «фона переписки» */
-	--color-bg-alt: #e9edf2;
-	--color-hover: #f4f5f7;
-	--color-active: #e6effe;
-	--color-accent-subtle: #d7e7ff;
+	/* Градиенты аватаров с буквами — пять цветов MAX UI, одинаковые в обеих темах */
+	--avatar-gradient-1: linear-gradient(153deg, #ff48b6 0.77%, #ff8a35 93.03%);
+	--avatar-gradient-2: linear-gradient(155deg, #ffc93d 6.6%, #ff832a 84.12%);
+	--avatar-gradient-3: linear-gradient(158deg, #14e1d5 6.15%, #03c722 85.68%);
+	--avatar-gradient-4: linear-gradient(157deg, #08d7f3 6.38%, #5398ff 85%);
+	--avatar-gradient-5: linear-gradient(155deg, #bf97ff 6.6%, #526eff 84.12%);
+
+	/* Шрифт MAX UI: системный шрифт устройства */
+	--font-family: -apple-system, system-ui, 'Helvetica Neue', Roboto, sans-serif;
+
+	/* Размеры текста MAX UI: размер и высота строки парами */
+	/* Заголовок экрана («Вход») */
+	--font-size-header: 24px;
+	--line-height-header: 28px;
+	/* Заголовок панели («Чаты») */
+	--font-size-subheader: 20px;
+	--line-height-subheader: 24px;
+	/* Заголовок чата в шапке */
+	--font-size-title: 17px;
+	--line-height-title: 24px;
+	/* Основной текст, сообщения */
+	--font-size-body: 16px;
+	--line-height-body: 20px;
+	/* Поля ввода, плашки */
+	--font-size-detail: 15px;
+	--line-height-detail: 20px;
+	/* Подписи, превью в списке чатов */
+	--font-size-caption: 13px;
+	--line-height-caption: 16px;
+	/* Время */
+	--font-size-label: 12px;
+	--line-height-label: 16px;
 
 	/* Высота шапки панели (над списком чатов и над перепиской) */
 	--header-height: 64px;
 
-	--radius: 8px;
+	/* Скругления MAX UI */
+	--radius-sm: 8px;
+	--radius: 12px;
 	--radius-lg: 16px;
 	--shadow: 0 2px 12px rgb(0 0 0 / 8%);
+}
 
-	--font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+/* Тёмная тема — по настройке системы. Меняются только цвета */
+@media (prefers-color-scheme: dark) {
+	:root {
+		--color-bg: #0f0f12;
+		--color-surface: #17181c;
+		--color-card: #25262d;
+
+		--color-text: #ffffff;
+		--color-text-secondary: rgb(255 255 255 / 80%);
+		--color-border: rgb(255 255 255 / 12%);
+
+		--color-hover: hsl(0 0% 91% / 4%);
+		--color-pressed: hsl(0 0% 91% / 8%);
+		--color-field: rgb(255 255 255 / 9%);
+		--color-icon-muted: rgb(255 255 255 / 28%);
+
+		/* Заливка та же, что в светлой теме: белый текст на ней читается одинаково */
+		--color-accent: #006ee5;
+		--color-accent-hover: #0062cc;
+		/* На тёмном фоне акцентному тексту нужен светлый синий: #006ee5 дал бы только 3.68:1 */
+		--color-accent-text: #479fff;
+		--color-focus: #479fff;
+		--color-on-accent: #ffffff;
+		/* Подобрано */
+		--color-accent-subtle: #0b2f59;
+		--color-active: #122e4e;
+
+		/* Подобрано: #ce4257 из MAX UI на подложке даёт только 4.14:1 */
+		--color-error: #ff6b73;
+		--color-error-bg: #3d1a1e;
+		--color-warning: #ffc46b;
+		--color-warning-bg: #3a2c0c;
+	}
 }

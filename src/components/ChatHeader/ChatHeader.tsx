@@ -1,10 +1,10 @@
-// Шапка переписки: имя собеседника (под ним номер) или просто номер,
+// Шапка переписки: аватар, имя собеседника (под ним номер) или просто номер,
 // и, если передан onBack, кнопка «Назад».
 // Только показ: когда нужна «Назад» и что она делает, решает страница.
 
 import type { Chat } from '@/store/types';
-import { IconButton, PanelHeader } from '@/ui';
-import { chatAddress, chatTitle } from '@/utils/format';
+import { Avatar, IconButton, PanelHeader } from '@/ui';
+import { chatAddress, chatTitle, initials } from '@/utils/format';
 import styles from './ChatHeader.module.css';
 
 type Props = {
@@ -20,19 +20,23 @@ export function ChatHeader({ chat, onBack }: Props) {
 			// Если в заголовке имя — номер показываем строкой ниже
 			subtitle={chat.name?.trim() ? chatAddress(chat) : undefined}
 			before={
-				onBack && (
-					<IconButton className={styles.back} label="Назад к списку чатов" onClick={onBack}>
-						<svg viewBox="0 0 24 24" width="24" height="24" fill="none" aria-hidden="true">
-							<path
-								d="M15 18l-6-6 6-6"
-								stroke="currentColor"
-								strokeWidth="2"
-								strokeLinecap="round"
-								strokeLinejoin="round"
-							/>
-						</svg>
-					</IconButton>
-				)
+				<>
+					{onBack && (
+						<IconButton className={styles.back} label="Назад к списку чатов" onClick={onBack}>
+							<svg viewBox="0 0 24 24" width="24" height="24" fill="none" aria-hidden="true">
+								<path
+									d="M15 18l-6-6 6-6"
+									stroke="currentColor"
+									strokeWidth="2"
+									strokeLinecap="round"
+									strokeLinejoin="round"
+								/>
+							</svg>
+						</IconButton>
+					)}
+					{/* Тот же аватар, что в списке чатов: цвет по тому же ключу */}
+					<Avatar initials={initials(chat.name)} colorKey={chat.id} size="md" />
+				</>
 			}
 		/>
 	);

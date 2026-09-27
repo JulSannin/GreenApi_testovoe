@@ -12,21 +12,31 @@
 	align-items: flex-start;
 }
 
-.bubble {
-	max-width: min(75%, 560px);
-	padding: 6px 10px 4px 12px;
-	border-radius: 16px;
-	box-shadow: 0 1px 1px rgb(0 0 0 / 6%);
+/* Конец группы — отступ до следующей группы (внутри группы пузыри стоят вплотную) */
+.last {
+	margin-bottom: 6px;
 }
 
-/* Хвостик пузыря — к краю, с которого пришло сообщение */
+.bubble {
+	max-width: min(75%, 560px);
+	padding: 6px 12px;
+	border-radius: var(--radius-lg);
+}
+
 .out .bubble {
 	background: var(--color-accent-subtle);
-	border-bottom-right-radius: 4px;
 }
 
 .in .bubble {
-	background: var(--color-surface);
+	background: var(--color-card);
+}
+
+/* Хвостик — острый угол у последнего пузыря группы, со стороны отправителя */
+.out.last .bubble {
+	border-bottom-right-radius: 4px;
+}
+
+.in.last .bubble {
 	border-bottom-left-radius: 4px;
 }
 
@@ -34,8 +44,12 @@
 	outline: 1px solid var(--color-error);
 }
 
-/* pre-wrap — сохраняем переносы строк из сообщения; anywhere — длинная ссылка не вылезет за пузырь */
+/* pre-wrap — сохраняем переносы строк из сообщения; anywhere — длинная ссылка не вылезет за пузырь.
+   flow-root — пузырь растёт вместе со временем, если оно переехало на новую строку */
 .text {
+	display: flow-root;
+	font-size: var(--font-size-body);
+	line-height: var(--line-height-body);
 	white-space: pre-wrap;
 	overflow-wrap: anywhere;
 }
@@ -45,12 +59,20 @@
 	color: var(--color-text-secondary);
 }
 
+/* Время и статус прижаты вправо (float) в конце текста: встают на последнюю строку,
+   если там есть место, иначе — строкой ниже.
+   Отступ сверху опускает их к низу строки: 4px + 16px высоты = 20px, ровно строка текста,
+   поэтому на строке с текстом пузырь не растёт, а на своей строке снизу тот же отступ, что у текста */
 .meta {
-	display: flex;
-	justify-content: flex-end;
-	gap: 4px;
-	font-size: 11px;
+	float: right;
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	margin: 4px 0 0 8px;
+	font-size: var(--font-size-label);
+	line-height: var(--line-height-label);
 	color: var(--color-text-secondary);
+	white-space: nowrap;
 }
 
 .failure {
@@ -60,6 +82,7 @@
 	justify-content: flex-end;
 	align-items: baseline;
 	gap: 4px 12px;
-	font-size: 13px;
+	font-size: var(--font-size-caption);
+	line-height: var(--line-height-caption);
 	text-align: right;
 }

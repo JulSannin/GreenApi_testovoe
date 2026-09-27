@@ -1,9 +1,10 @@
+/* Строка по образцу строки списка MAX UI: отступы 8/12, между аватаром и текстом 12 */
 .item {
 	width: 100%;
 	display: flex;
 	align-items: center;
 	gap: 12px;
-	padding: 10px 16px;
+	padding: 8px 12px;
 	border: none;
 	background: transparent;
 	color: inherit;
@@ -15,9 +16,19 @@
 	background: var(--color-hover);
 }
 
+.item:active {
+	background: var(--color-pressed);
+}
+
 .active,
-.active:hover {
+.active:hover,
+.active:active {
 	background: var(--color-active);
+}
+
+/* Строка во всю ширину списка: рамку фокуса рисуем внутри, иначе её обрежет прокрутка списка */
+.item:focus-visible {
+	outline-offset: -2px;
 }
 
 /* min-width: 0 — без этого длинный текст не обрежется многоточием, а растянет строку */
@@ -26,6 +37,7 @@
 	min-width: 0;
 	display: flex;
 	flex-direction: column;
+	gap: 4px;
 }
 
 .top {
@@ -43,16 +55,20 @@
 }
 
 .title {
-	font-weight: 600;
+	font-size: var(--font-size-body);
+	line-height: var(--line-height-body);
+	font-weight: 500;
 }
 
 .time {
 	flex-shrink: 0;
-	font-size: 12px;
+	font-size: var(--font-size-label);
+	line-height: var(--line-height-label);
 	color: var(--color-text-secondary);
 }
 
 .preview {
-	font-size: 14px;
+	font-size: var(--font-size-caption);
+	line-height: var(--line-height-caption);
 	color: var(--color-text-secondary);
 }

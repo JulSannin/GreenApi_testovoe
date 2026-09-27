@@ -1,12 +1,14 @@
 // Лента сообщений. При новом сообщении прокручивается вниз — но не выдёргивает пользователя,
-// если он читает историю выше.
+// если он читает историю выше. Перед сообщениями каждого дня — разделитель с датой,
+// сообщения одной стороны подряд собраны в группы (раскладку считает groupMessages).
 // Здесь пузыри получают действия: «Повторить» — повторная отправка, «Удалить» — удаление из стора.
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { MessageBubble } from '@/components';
 import { useChatStore } from '@/store/chatStore';
 import type { Chat, Message } from '@/store/types';
 import { cx, EmptyState, ErrorText } from '@/ui';
+import { groupMessages } from './groupMessages';
 import styles from './MessageList.module.css';
 import { retryChatMessage } from './sendChatMessage';
 import type { HistoryStatus } from './useChatHistory';
@@ -36,6 +38,8 @@ export function MessageList({ chat, messages, historyStatus }: Props) {
 	}
 
 	const lastDirection = messages.at(-1)?.direction;
+	// Пересчитываем раскладку, только когда изменились сами сообщения
+	const feed = useMemo(() => groupMessages(messages), [messages]);
 
 	// Прокрутка вниз при открытии чата и при новом сообщении.
 	// Зависим от количества, а не от массива: смена статуса 'sending' → 'sent'
@@ -64,14 +68,21 @@ export function MessageList({ chat, messages, historyStatus }: Props) {
 					{historyStatus === 'loading' ? 'Загружаем историю…' : 'Напишите первое сообщение'}
 				</EmptyState>
 			) : (
-				messages.map((message) => (
-					<MessageBubble
-						key={message.id}
-						message={message}
-						onRetry={() => void retryChatMessage(chat, message)}
-						onDelete={() => removeMessage(chat.id, message.id)}
-					/>
-				))
+				feed.map((item) =>
+					item.kind === 'day' ? (
+						<p key={item.key} className={cx(styles.note, styles.day, styles.muted)}>
+							{item.label}
+						</p>
+					) : (
+						<MessageBubble
+							key={item.message.id}
+							message={item.message}
+							isLastInGroup={item.isLastInGroup}
+							onRetry={() => void retryChatMessage(chat, item.message)}
+							onDelete={() => removeMessage(chat.id, item.message.id)}
+						/>
+					),
+				)
 			)}
 		</div>
 	);

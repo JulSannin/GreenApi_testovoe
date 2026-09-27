@@ -1,10 +1,11 @@
+/* Размеры и форма — по кнопкам-иконкам MAX UI: скругление 45% — почти круг */
 .button {
 	flex-shrink: 0;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	border: none;
-	border-radius: 50%;
+	border-radius: 45%;
 	cursor: pointer;
 }
 
@@ -13,9 +14,10 @@
 	cursor: default;
 }
 
+/* Залитая акцентным цветом: «Отправить», «Создать чат» */
 .primary {
-	width: 42px;
-	height: 42px;
+	width: 40px;
+	height: 40px;
 	background: var(--color-accent);
 	color: var(--color-on-accent);
 }
@@ -24,13 +26,18 @@
 	background: var(--color-accent-hover);
 }
 
+/* Прозрачная: иконки в шапках («Назад», «Обновить») */
 .ghost {
-	width: 36px;
-	height: 36px;
+	width: 32px;
+	height: 32px;
 	background: transparent;
-	color: var(--color-accent);
+	color: var(--color-accent-text);
 }
 
 .ghost:hover:not(:disabled) {
 	background: var(--color-hover);
+}
+
+.ghost:active:not(:disabled) {
+	background: var(--color-pressed);
 }

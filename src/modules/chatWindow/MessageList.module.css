@@ -1,20 +1,28 @@
+/* Пузыри внутри группы стоят почти вплотную; отступ между группами даёт MessageBubble */
 .list {
 	flex: 1;
 	min-height: 0;
 	overflow-y: auto;
 	display: flex;
 	flex-direction: column;
-	gap: 6px;
-	padding: 16px;
+	gap: 2px;
+	padding: 12px 16px;
 }
 
-/* Пометка про загрузку истории над сообщениями */
+/* Плашка по центру ленты: пометка про загрузку истории и разделитель дней */
 .note {
 	align-self: center;
 	padding: 4px 12px;
 	border-radius: var(--radius-lg);
-	background: var(--color-surface);
-	font-size: 13px;
+	background: var(--color-card);
+	font-size: var(--font-size-caption);
+	line-height: var(--line-height-caption);
+}
+
+/* Разделитель дней — с равными отступами от сообщений: сообщение перед ним всегда последнее
+   в группе и уже даёт 6px снизу, поэтому сверху 2px (6 + 2 + 2 = 10), снизу 8px (8 + 2 = 10) */
+.day {
+	margin: 2px 0 8px;
 }
 
 /* Цвет обычной пометки; у пометки об ошибке цвет задаёт ErrorText */

@@ -2,7 +2,7 @@
 
 import { useId, useState, type SubmitEvent } from 'react';
 import { useChatStore } from '@/store/chatStore';
-import { Button, ErrorText, Input } from '@/ui';
+import { ErrorText, IconButton, Input } from '@/ui';
 import styles from './NewChatForm.module.css';
 
 export function NewChatForm() {
@@ -45,9 +45,16 @@ export function NewChatForm() {
 					aria-describedby={error ? errorId : undefined}
 					autoComplete="off"
 				/>
-				<Button type="submit" size="sm" disabled={!phone.trim()}>
-					Создать
-				</Button>
+				<IconButton type="submit" variant="primary" label="Создать чат" disabled={!phone.trim()}>
+					<svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
+						<path
+							d="M12 5v14M5 12h14"
+							stroke="currentColor"
+							strokeWidth="2"
+							strokeLinecap="round"
+						/>
+					</svg>
+				</IconButton>
 			</div>
 
 			{error && <ErrorText id={errorId}>{error}</ErrorText>}

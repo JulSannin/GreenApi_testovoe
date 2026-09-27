@@ -63,6 +63,7 @@ export function LoginForm() {
 			</div>
 
 			<TextField
+				large
 				label="apiUrl"
 				value={apiUrl}
 				onChange={(e) => setApiUrl(e.target.value)}
@@ -73,6 +74,7 @@ export function LoginForm() {
 			/>
 
 			<TextField
+				large
 				label="idInstance"
 				value={idInstance}
 				onChange={(e) => setIdInstance(e.target.value)}
@@ -83,6 +85,7 @@ export function LoginForm() {
 			/>
 
 			<TextField
+				large
 				label="apiTokenInstance"
 				// Токен — секрет, поэтому скрываем его как пароль
 				type="password"

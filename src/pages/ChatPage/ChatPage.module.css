@@ -11,7 +11,8 @@
 	flex: 1;
 	min-height: 0;
 	display: grid;
-	grid-template-columns: 340px minmax(0, 1fr);
+	/* Список чатов — шириной с экран телефона, как в MAX */
+	grid-template-columns: 360px minmax(0, 1fr);
 	grid-template-rows: minmax(0, 1fr);
 	overflow: hidden;
 }
@@ -27,7 +28,8 @@
 	min-height: 0;
 	display: flex;
 	flex-direction: column;
-	background: var(--color-bg-alt);
+	/* Лента — на подложке: сообщения стоят на ней карточками */
+	background: var(--color-bg);
 }
 
 /* Узкий экран (телефон): одна колонка.

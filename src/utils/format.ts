@@ -1,4 +1,4 @@
-// Форматирование номера и времени для показа в интерфейсе.
+// Форматирование номера, имени и времени для показа в интерфейсе.
 
 import type { Chat } from '@/store/types';
 
@@ -30,6 +30,26 @@ export function chatTitle(chat: Chat): string {
 	return chat.name?.trim() || chatAddress(chat);
 }
 
+/**
+ * Буквы для аватара: первые буквы первых двух слов имени — «Иван Петров» → «ИП», «Никита» → «Н».
+ * Берутся только буквы: эмодзи, кавычки и цифры пропускаются. Нет имени или букв в нём —
+ * пустая строка, и аватар покажет иконку. Передаётся именно имя, а не chatTitle:
+ * у чата без имени заголовок — номер, и из него вышел бы «+».
+ */
+export function initials(name: string | undefined): string {
+	if (!name) return '';
+	return (
+		name
+			.split(/\s+/)
+			// \p{L} — любая буква любого алфавита
+			.map((word) => /\p{L}/u.exec(word)?.[0] ?? '')
+			.filter(Boolean)
+			.slice(0, 2)
+			.join('')
+			.toUpperCase()
+	);
+}
+
 // Intl.DateTimeFormat создаётся один раз: это заметно быстрее, чем на каждый вызов
 const timeFormat = new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit' });
 const dayMonthFormat = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-digit' });
@@ -37,6 +57,12 @@ const fullDateFormat = new Intl.DateTimeFormat('ru-RU', {
 	day: '2-digit',
 	month: '2-digit',
 	year: '2-digit',
+});
+const dayFormat = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long' });
+const dayYearFormat = new Intl.DateTimeFormat('ru-RU', {
+	day: 'numeric',
+	month: 'long',
+	year: 'numeric',
 });
 
 // Время сообщения: '14:05'
@@ -58,4 +84,26 @@ export function formatChatTime(ms: number, now = Date.now()): string {
 		return dayMonthFormat.format(date);
 	}
 	return fullDateFormat.format(date);
+}
+
+/**
+ * День для разделителя в переписке: «Сегодня», «Вчера», «12 сентября»,
+ * в прошлые годы — «12 сентября 2025 г.».
+ */
+export function formatDay(ms: number, now = Date.now()): string {
+	const date = new Date(ms);
+	const today = new Date(now);
+	if (date.toDateString() === today.toDateString()) {
+		return 'Сегодня';
+	}
+	// Вчера — тот же момент на сутки раньше по календарю (setDate учитывает переход месяца и года)
+	const yesterday = new Date(now);
+	yesterday.setDate(today.getDate() - 1);
+	if (date.toDateString() === yesterday.toDateString()) {
+		return 'Вчера';
+	}
+	if (date.getFullYear() === today.getFullYear()) {
+		return dayFormat.format(date);
+	}
+	return dayYearFormat.format(date);
 }

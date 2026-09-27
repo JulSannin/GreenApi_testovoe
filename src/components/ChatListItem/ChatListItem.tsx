@@ -1,9 +1,9 @@
-// Строка списка чатов: аватар, номер, время и начало последнего сообщения.
+// Строка списка чатов: аватар, имя (или номер), время и начало последнего сообщения.
 // Только показ: всё получает через props, о сторе не знает.
 
 import type { Chat, Message } from '@/store/types';
 import { Avatar, cx } from '@/ui';
-import { chatTitle, formatChatTime } from '@/utils/format';
+import { chatTitle, formatChatTime, initials } from '@/utils/format';
 import styles from './ChatListItem.module.css';
 
 type Props = {
@@ -31,7 +31,8 @@ export function ChatListItem({ chat, lastMessage, isActive, onSelect }: Props) {
 			// Программы экранного доступа сообщат, какой чат сейчас открыт
 			aria-current={isActive ? 'true' : undefined}
 		>
-			<Avatar />
+			{/* Цвет аватара — по ключу чата: у одного чата он не меняется */}
+			<Avatar initials={initials(chat.name)} colorKey={chat.id} size="lg" />
 			<span className={styles.body}>
 				<span className={styles.top}>
 					<span className={styles.title}>{chatTitle(chat)}</span>

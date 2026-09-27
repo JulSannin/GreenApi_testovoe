@@ -37,7 +37,7 @@ export function IncomingMessagesListener({ unauthorizedAction }: Props) {
 			<Banner
 				tone="warning"
 				action={
-					<Button size="sm" onClick={() => void settings.fix()} disabled={saving}>
+					<Button size="xs" onClick={() => void settings.fix()} disabled={saving}>
 						{saving ? 'Сохраняем…' : 'Включить приём'}
 					</Button>
 				}
@@ -53,7 +53,7 @@ export function IncomingMessagesListener({ unauthorizedAction }: Props) {
 			<Banner
 				tone="info"
 				action={
-					<Button size="sm" variant="secondary" onClick={settings.dismiss}>
+					<Button size="xs" variant="secondary" onClick={settings.dismiss}>
 						Понятно
 					</Button>
 				}
