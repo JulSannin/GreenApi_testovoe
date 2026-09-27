@@ -2,6 +2,7 @@
 // Остальные слои импортируют их отсюда: import { Button, Input } from '@/ui'
 
 export { Avatar } from './Avatar/Avatar';
+export { Banner } from './Banner/Banner';
 export { Button } from './Button/Button';
 export { cx } from './cx';
 export { EmptyState } from './EmptyState/EmptyState';

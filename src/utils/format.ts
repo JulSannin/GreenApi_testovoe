@@ -16,11 +16,18 @@ export function formatPhone(phone: string): string {
 }
 
 /**
- * Заголовок чата. Чат, созданный по номеру, отправляет на адрес '...@c.us' — показываем номер.
+ * Адрес собеседника. Чат, созданный по номеру, отправляет на адрес '...@c.us' — показываем номер.
  * Чат без номера (пришёл только id чата в MAX) показываем по этому id.
  */
-export function chatTitle(chat: Chat): string {
+export function chatAddress(chat: Chat): string {
 	return chat.chatId.endsWith('@c.us') ? formatPhone(chat.id) : chat.id;
+}
+
+/**
+ * Заголовок чата: имя собеседника, а если его ещё нет — номер.
+ */
+export function chatTitle(chat: Chat): string {
+	return chat.name?.trim() || chatAddress(chat);
 }
 
 // Intl.DateTimeFormat создаётся один раз: это заметно быстрее, чем на каждый вызов

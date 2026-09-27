@@ -1,11 +1,16 @@
 // Слой работы с GREEN-API. Компоненты вызывают только экспортируемые функции
-// (getStateInstance, sendMessage, receiveNotification, deleteNotification)
-// и ничего не знают про адреса, заголовки и формат ответов сервера.
+// (getStateInstance, sendMessage, receiveNotification, deleteNotification, getSettings,
+// setSettings, getChats, getChatHistory) и ничего не знают про адреса, заголовки и формат ответов.
 
 import type {
+	CheckAccountResponse,
 	Credentials,
 	DeleteNotificationResponse,
+	HistoryMessage,
+	InstanceSettings,
 	Notification,
+	RemoteChat,
+	SaveSettingsResponse,
 	SendMessageResponse,
 	StateInstance,
 } from './types';
@@ -66,6 +71,42 @@ function buildUrl(
 	return `${url}?${params}`;
 }
 
+// ---------- Повтор при 429 (слишком много запросов) ----------
+// У GREEN-API у каждого метода свой лимит частоты: у служебных (getSettings, getChats и т. п.)
+// около одного запроса в секунду. Если его превысить, сервер отвечает 429 и запрос не выполняет —
+// поэтому его безопасно повторить чуть позже, даже отправку сообщения.
+// Так бывает, например, в режиме разработки: React (StrictMode) запускает эффект дважды,
+// первый запрос отменяется уже после отправки, и второй упирается в лимит.
+
+// Сколько раз повторяем запрос после ответа 429, прежде чем сдаться
+export const RATE_LIMIT_RETRIES = 3;
+
+// Сколько ждать перед повтором: сколько попросил сервер (заголовок Retry-After, в секундах),
+// а если не попросил — 1, 2, 3 секунды
+function rateLimitDelayMs(response: Response, attempt: number): number {
+	const retryAfter = Number(response.headers.get('Retry-After'));
+	return Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 1000 * (attempt + 1);
+}
+
+// Пауза, которая обрывается вместе с запросом: пользователь ушёл с экрана — ждать незачем
+function pause(ms: number, signal?: AbortSignal): Promise<void> {
+	return new Promise((resolve, reject) => {
+		if (signal?.aborted) {
+			reject(signal.reason);
+			return;
+		}
+		const onAbort = () => {
+			clearTimeout(timer);
+			reject(signal?.reason);
+		};
+		const timer = setTimeout(() => {
+			signal?.removeEventListener('abort', onAbort);
+			resolve();
+		}, ms);
+		signal?.addEventListener('abort', onAbort, { once: true });
+	});
+}
+
 // Общая функция, через которую идут все запросы.
 // T — тип ожидаемого ответа. Это подсказка для TypeScript, а не проверка реальных данных.
 async function request<T>(
@@ -80,12 +121,19 @@ async function request<T>(
 	// signal передаём в fetch: после controller.abort() fetch сразу упадёт с AbortError.
 	// AbortError здесь не перехватываем — он уходит наверх как есть,
 	// чтобы цикл приёма отличал «меня остановили» от «упала сеть».
-	const response = await fetch(buildUrl(credentials, method, pathSuffix, query), {
-		method: httpMethod,
-		headers: hasBody ? { 'Content-Type': 'application/json' } : undefined,
-		body: hasBody ? JSON.stringify(body) : undefined,
-		signal,
-	});
+	const send = () =>
+		fetch(buildUrl(credentials, method, pathSuffix, query), {
+			method: httpMethod,
+			headers: hasBody ? { 'Content-Type': 'application/json' } : undefined,
+			body: hasBody ? JSON.stringify(body) : undefined,
+			signal,
+		});
+
+	let response = await send();
+	for (let attempt = 0; response.status === 429 && attempt < RATE_LIMIT_RETRIES; attempt++) {
+		await pause(rateLimitDelayMs(response, attempt), signal);
+		response = await send();
+	}
 
 	// Читаем ответ как текст, а не через response.json():
 	// на пустом ответе response.json() упал бы с ошибкой
@@ -172,6 +220,76 @@ export function deleteNotification(
 	return request<DeleteNotificationResponse>(credentials, 'deleteNotification', {
 		httpMethod: 'DELETE',
 		pathSuffix: `/${receiptId}`,
+		signal,
+	});
+}
+
+/**
+ * Настройки инстанса: куда и какие уведомления он отправляет.
+ */
+export function getSettings(
+	credentials: Credentials,
+	signal?: AbortSignal,
+): Promise<InstanceSettings> {
+	return request<InstanceSettings>(credentials, 'getSettings', { signal });
+}
+
+/**
+ * Меняет настройки инстанса. Передаются только те поля, которые нужно изменить.
+ * По документации инстанс при этом перезапускается, а настройки вступают в силу в течение 5 минут.
+ */
+export function setSettings(
+	credentials: Credentials,
+	settings: InstanceSettings,
+	signal?: AbortSignal,
+): Promise<SaveSettingsResponse> {
+	return request<SaveSettingsResponse>(credentials, 'setSettings', {
+		httpMethod: 'POST',
+		body: settings,
+		signal,
+	});
+}
+
+/**
+ * Есть ли у номера аккаунт MAX и какой id у чата с ним.
+ * Нужен, потому что MAX скрывает номера: без этого чат, созданный по номеру, и тот же чат
+ * из списка MAX (или входящие от собеседника) выглядели бы как два разных чата.
+ * По документации частые проверки, особенно несуществующих номеров, выглядят подозрительно
+ * (ошибка 469 — пауза на 2 часа), поэтому каждый номер проверяем один раз.
+ */
+export function checkAccount(
+	credentials: Credentials,
+	phone: string,
+	signal?: AbortSignal,
+): Promise<CheckAccountResponse> {
+	return request<CheckAccountResponse>(credentials, 'checkAccount', {
+		httpMethod: 'POST',
+		// По документации номер передаётся числом
+		body: { phoneNumber: Number(phone) },
+		signal,
+	});
+}
+
+/**
+ * Список чатов аккаунта MAX: личные, группы, каналы, боты.
+ */
+export function getChats(credentials: Credentials, signal?: AbortSignal): Promise<RemoteChat[]> {
+	return request<RemoteChat[]>(credentials, 'getChats', { signal });
+}
+
+/**
+ * История сообщений чата — входящие и исходящие (в том числе отправленные с телефона).
+ * chatId — id чата в MAX. По документации — не глубже 3 месяцев и 5000 сообщений.
+ */
+export function getChatHistory(
+	credentials: Credentials,
+	chatId: string,
+	count: number,
+	signal?: AbortSignal,
+): Promise<HistoryMessage[]> {
+	return request<HistoryMessage[]>(credentials, 'getChatHistory', {
+		httpMethod: 'POST',
+		body: { chatId, count },
 		signal,
 	});
 }

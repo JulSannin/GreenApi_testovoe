@@ -1,4 +1,4 @@
-// Список чатов, новые сверху.
+// Список чатов: сначала с перепиской (новые сверху), потом чаты из MAX без загруженных сообщений.
 
 import { ChatListItem } from '@/components';
 import { useChatStore, useLastMessage, useSortedChats } from '@/store/chatStore';
@@ -6,13 +6,22 @@ import type { Chat } from '@/store/types';
 import { EmptyState } from '@/ui';
 import styles from './ChatList.module.css';
 
-export function ChatList() {
+type Props = {
+	// Идёт загрузка чатов из MAX
+	isLoading: boolean;
+};
+
+export function ChatList({ isLoading }: Props) {
 	const chats = useSortedChats();
 	const activeChatId = useChatStore((state) => state.activeChatId);
 	const setActiveChat = useChatStore((state) => state.setActiveChat);
 
 	if (chats.length === 0) {
-		return <EmptyState>Создайте чат по номеру телефона</EmptyState>;
+		return (
+			<EmptyState>
+				{isLoading ? 'Загружаем чаты из MAX…' : 'Чатов пока нет. Создайте чат по номеру телефона'}
+			</EmptyState>
+		);
 	}
 
 	return (

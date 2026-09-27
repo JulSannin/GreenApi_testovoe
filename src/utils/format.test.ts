@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Chat } from '@/store/types';
-import { chatTitle, formatChatTime, formatPhone, formatTime } from './format';
+import { chatAddress, chatTitle, formatChatTime, formatPhone, formatTime } from './format';
 
 describe('formatPhone', () => {
 	it('разбивает российский номер на группы', () => {
@@ -12,15 +12,28 @@ describe('formatPhone', () => {
 	});
 });
 
-describe('chatTitle', () => {
+describe('chatAddress', () => {
 	it('для чата по номеру показывает номер', () => {
 		const chat: Chat = { id: '79991234567', chatId: '79991234567@c.us', lastMessageAt: 0 };
-		expect(chatTitle(chat)).toBe('+7 999 123-45-67');
+		expect(chatAddress(chat)).toBe('+7 999 123-45-67');
 	});
 
 	it('для чата без номера показывает id чата в MAX', () => {
 		const chat: Chat = { id: '10000000', chatId: '10000000', lastMessageAt: 0 };
-		expect(chatTitle(chat)).toBe('10000000');
+		expect(chatAddress(chat)).toBe('10000000');
+	});
+});
+
+describe('chatTitle', () => {
+	const byPhone: Chat = { id: '79991234567', chatId: '79991234567@c.us', lastMessageAt: 0 };
+
+	it('показывает имя собеседника, если оно есть', () => {
+		expect(chatTitle({ ...byPhone, name: 'Иван' })).toBe('Иван');
+	});
+
+	it('без имени (или с пустым) показывает номер', () => {
+		expect(chatTitle(byPhone)).toBe('+7 999 123-45-67');
+		expect(chatTitle({ ...byPhone, name: '  ' })).toBe('+7 999 123-45-67');
 	});
 });
 

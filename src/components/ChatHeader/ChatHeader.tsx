@@ -1,9 +1,10 @@
-// Шапка переписки: номер собеседника и, если передан onBack, кнопка «Назад».
+// Шапка переписки: имя собеседника (под ним номер) или просто номер,
+// и, если передан onBack, кнопка «Назад».
 // Только показ: когда нужна «Назад» и что она делает, решает страница.
 
 import type { Chat } from '@/store/types';
 import { IconButton, PanelHeader } from '@/ui';
-import { chatTitle } from '@/utils/format';
+import { chatAddress, chatTitle } from '@/utils/format';
 import styles from './ChatHeader.module.css';
 
 type Props = {
@@ -16,6 +17,8 @@ export function ChatHeader({ chat, onBack }: Props) {
 	return (
 		<PanelHeader
 			title={chatTitle(chat)}
+			// Если в заголовке имя — номер показываем строкой ниже
+			subtitle={chat.name?.trim() ? chatAddress(chat) : undefined}
 			before={
 				onBack && (
 					<IconButton className={styles.back} label="Назад к списку чатов" onClick={onBack}>

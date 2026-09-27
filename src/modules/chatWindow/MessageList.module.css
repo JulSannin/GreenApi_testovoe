@@ -7,3 +7,17 @@
 	gap: 6px;
 	padding: 16px;
 }
+
+/* Пометка про загрузку истории над сообщениями */
+.note {
+	align-self: center;
+	padding: 4px 12px;
+	border-radius: var(--radius-lg);
+	background: var(--color-surface);
+	font-size: 13px;
+}
+
+/* Цвет обычной пометки; у пометки об ошибке цвет задаёт ErrorText */
+.muted {
+	color: var(--color-text-secondary);
+}

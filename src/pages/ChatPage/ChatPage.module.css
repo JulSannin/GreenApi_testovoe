@@ -1,7 +1,15 @@
-/* Экран ровно на высоту окна: прокручиваются только список чатов и лента сообщений.
+/* Страница ровно на высоту окна: сверху плашка (если есть), под ней экран чата.
    dvh вместо vh — см. комментарий к body в app/global.css */
-.screen {
+.page {
 	height: 100dvh;
+	display: flex;
+	flex-direction: column;
+}
+
+/* Экран занимает всё, что осталось под плашкой: прокручиваются только список чатов и лента */
+.screen {
+	flex: 1;
+	min-height: 0;
 	display: grid;
 	grid-template-columns: 340px minmax(0, 1fr);
 	grid-template-rows: minmax(0, 1fr);

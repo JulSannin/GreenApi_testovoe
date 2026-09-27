@@ -7,7 +7,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Credentials } from '@/api/types';
 import { isValidPhone, normalizePhone, toChatId } from '@/utils/phone';
-import type { Chat, Message } from './types';
+import type { Chat, ChatInfo, Message } from './types';
 
 type ChatState = {
 	// Данные входа в GREEN-API; null — пользователь не вошёл
@@ -25,11 +25,51 @@ type ChatActions = {
 	logout: () => void;
 	createChat: (phone: string) => string | null;
 	setActiveChat: (chatKey: string | null) => void;
-	addMessage: (chatKey: string, chatId: string, message: Message) => void;
+	addMessage: (chatKey: string, chatId: string, message: Message, meta?: ChatMeta) => void;
+	addMessages: (chatKey: string, chatId: string, messages: Message[]) => void;
+	mergeChats: (chats: ChatInfo[]) => void;
+	linkChat: (chatKey: string, maxChatId: string) => void;
+	markNoMaxAccount: (chatKey: string) => void;
 	updateMessage: (chatKey: string, messageId: string, patch: Partial<Message>) => void;
 	confirmMessage: (chatKey: string, localId: string, idMessage: string) => void;
 	removeMessage: (chatKey: string, messageId: string) => void;
 };
+
+// Что ещё известно о чате из сообщения: имя собеседника и id чата в MAX
+type ChatMeta = Pick<ChatInfo, 'name' | 'maxChatId'>;
+
+/**
+ * Ключ чата по его id в MAX — или undefined, если такой чат ещё не известен.
+ */
+export function findChatKeyByMaxId(
+	chats: Record<string, Chat>,
+	maxChatId: string,
+): string | undefined {
+	return Object.values(chats).find((chat) => chat.maxChatId === maxChatId || chat.id === maxChatId)
+		?.id;
+}
+
+// Чат с новыми сведениями. Существующему не меняем адрес для отправки;
+// новое имя и id в MAX важнее старых (собеседник мог переименоваться), а без них старые сохраняются
+function withChatInfo(chat: Chat | undefined, key: string, chatId: string, meta: ChatMeta): Chat {
+	return {
+		// Остальные поля чата (например, noMaxAccount) сохраняем как есть
+		...chat,
+		id: key,
+		chatId: chat?.chatId ?? chatId,
+		name: meta.name ?? chat?.name,
+		maxChatId: meta.maxChatId ?? chat?.maxChatId,
+		lastMessageAt: chat?.lastMessageAt ?? 0,
+	};
+}
+
+// Два списка сообщений в один: без повторов (по id), по времени
+function mergeMessages(current: Message[], added: Message[]): Message[] {
+	const known = new Set(current.map((m) => m.id));
+	const fresh = added.filter((m) => !known.has(m.id));
+	if (fresh.length === 0) return current;
+	return [...current, ...fresh].sort((a, b) => a.timestamp - b.timestamp);
+}
 
 const initialState: ChatState = {
 	credentials: null,
@@ -98,28 +138,121 @@ export const useChatStore = create<ChatState & ChatActions>()(
 			 *   chatId передаётся отдельно: по одному ключу из цифр не понять,
 			 *   номер это или id чата в MAX, а адрес для отправки у них разный.
 			 * - Обновляет lastMessageAt, чтобы чат поднялся вверх списка.
+			 * - meta — что ещё известно из сообщения: имя собеседника (чтобы в списке было «Иван»,
+			 *   а не только номер) и id чата в MAX (чтобы потом найти чат, когда номера нет).
 			 */
-			addMessage: (chatKey, chatId, message) =>
+			addMessage: (chatKey, chatId, message, meta = {}) =>
 				set((state) => {
 					const current = state.messages[chatKey] ?? [];
 					// Возвращаем тот же объект state — Zustand увидит, что ничего не изменилось,
 					// и не будет перерисовывать компоненты
 					if (current.some((m) => m.id === message.id)) return state;
 
-					const chat = state.chats[chatKey];
+					const chat = withChatInfo(state.chats[chatKey], chatKey, chatId, meta);
 					return {
 						chats: {
 							...state.chats,
 							[chatKey]: {
-								id: chatKey,
-								// У существующего чата адрес не меняем
-								chatId: chat?.chatId ?? chatId,
-								lastMessageAt: Math.max(chat?.lastMessageAt ?? 0, message.timestamp),
+								...chat,
+								lastMessageAt: Math.max(chat.lastMessageAt, message.timestamp),
 							},
 						},
 						// Добавляем в конец: сообщения приходят по порядку (очередь GREEN-API — FIFO)
 						messages: { ...state.messages, [chatKey]: [...current, message] },
 					};
+				}),
+
+			/**
+			 * Добавляет пачку сообщений (историю переписки) в чат chatKey.
+			 * Уже известные (по id) пропускаются; всё вместе сортируется по времени:
+			 * история старше того, что пришло или отправлено за этот сеанс.
+			 */
+			addMessages: (chatKey, chatId, messages) =>
+				set((state) => {
+					const current = state.messages[chatKey] ?? [];
+					const merged = mergeMessages(current, messages);
+					if (merged === current) return state;
+
+					const chat = withChatInfo(state.chats[chatKey], chatKey, chatId, {});
+					return {
+						chats: {
+							...state.chats,
+							[chatKey]: {
+								...chat,
+								lastMessageAt: Math.max(chat.lastMessageAt, merged.at(-1)!.timestamp),
+							},
+						},
+						messages: { ...state.messages, [chatKey]: merged },
+					};
+				}),
+
+			/**
+			 * Дополняет список чатов чатами из MAX (getChats): новые заводятся без сообщений,
+			 * у известных обновляются имя и id в MAX. Сообщения не трогаются.
+			 * Известный чат ищется сначала по id в MAX: если он уже заведён под другим ключом
+			 * (например, по id, пока номер был скрыт), второй чат с тем же человеком не появится.
+			 */
+			mergeChats: (chats) =>
+				set((state) => {
+					if (chats.length === 0) return state;
+					const next = { ...state.chats };
+					for (const info of chats) {
+						const key = (info.maxChatId && findChatKeyByMaxId(next, info.maxChatId)) || info.key;
+						next[key] = withChatInfo(next[key], key, info.chatId, info);
+					}
+					return { chats: next };
+				}),
+
+			/**
+			 * Связывает чат с его id в MAX (узнали через checkAccount).
+			 * Если под этим id уже есть другой чат — это тот же собеседник: MAX скрывает номера,
+			 * поэтому раньше его было не опознать. Такой чат вливается в chatKey:
+			 * сообщения объединяются без повторов, имя переходит, если своего нет,
+			 * а если он был открыт — открытым становится chatKey.
+			 */
+			linkChat: (chatKey, maxChatId) =>
+				set((state) => {
+					const chat = state.chats[chatKey];
+					if (!chat) return state;
+
+					const duplicate = Object.values(state.chats).find(
+						(other) =>
+							other.id !== chatKey && (other.maxChatId === maxChatId || other.id === maxChatId),
+					);
+					if (!duplicate && chat.maxChatId === maxChatId) return state;
+
+					const chats = {
+						...state.chats,
+						[chatKey]: {
+							...chat,
+							maxChatId,
+							name: chat.name ?? duplicate?.name,
+							lastMessageAt: Math.max(chat.lastMessageAt, duplicate?.lastMessageAt ?? 0),
+						},
+					};
+					const messages = { ...state.messages };
+					if (duplicate) {
+						messages[chatKey] = mergeMessages(
+							state.messages[chatKey] ?? [],
+							state.messages[duplicate.id] ?? [],
+						);
+						delete chats[duplicate.id];
+						delete messages[duplicate.id];
+					}
+
+					return {
+						chats,
+						messages,
+						activeChatId: state.activeChatId === duplicate?.id ? chatKey : state.activeChatId,
+					};
+				}),
+
+			// checkAccount показал, что у номера нет аккаунта MAX — больше его не проверяем
+			markNoMaxAccount: (chatKey) =>
+				set((state) => {
+					const chat = state.chats[chatKey];
+					if (!chat || chat.noMaxAccount) return state;
+					return { chats: { ...state.chats, [chatKey]: { ...chat, noMaxAccount: true } } };
 				}),
 
 			/**

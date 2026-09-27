@@ -20,7 +20,8 @@ export function MessageBubble({ message, onRetry, onDelete }: Props) {
 	return (
 		<div className={cx(styles.row, isOut ? styles.out : styles.in)}>
 			<div className={cx(styles.bubble, isFailed && styles.failed)}>
-				<p className={styles.text}>{message.text}</p>
+				{/* Заглушку вместо фото, стикера и т. п. выделяем, чтобы не спутать с текстом собеседника */}
+				<p className={cx(styles.text, message.unsupported && styles.unsupported)}>{message.text}</p>
 				<span className={styles.meta}>
 					<time dateTime={new Date(message.timestamp).toISOString()}>
 						{formatTime(message.timestamp)}

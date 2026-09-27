@@ -2,6 +2,7 @@
 // а каждый тест задаёт, что «ответит сервер», и проверяет, какое сообщение увидит пользователь.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { RATE_LIMIT_RETRIES } from '@/api/greenApi';
 import type { Credentials, StateInstance } from '@/api/types';
 import { checkCredentials, LoginError, validateCredentials } from './checkCredentials';
 
@@ -96,10 +97,21 @@ describe('ошибки запроса', () => {
 		await expect(checkCredentials(credentials)).rejects.toThrow('Неверные данные');
 	});
 
-	it('статус 429 — слишком много запросов', async () => {
-		reply('', 429);
+	it('статус 429 и после всех повторов — слишком много запросов', async () => {
+		// API-слой повторяет запрос после 429 с паузами — не ждём их по-настоящему
+		vi.useFakeTimers();
+		try {
+			for (let i = 0; i <= RATE_LIMIT_RETRIES; i++) {
+				reply('', 429);
+			}
 
-		await expect(checkCredentials(credentials)).rejects.toThrow('Слишком много запросов');
+			const checking = checkCredentials(credentials).catch((e: unknown) => e);
+			await vi.runAllTimersAsync();
+
+			expect(await checking).toMatchObject({ message: expect.stringContaining('Слишком много') });
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 
 	it('статус 5xx — сервер недоступен', async () => {

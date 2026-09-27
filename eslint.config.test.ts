@@ -4,10 +4,17 @@
 // Файлов на диске нет: ESLint проверяет текст так, будто он лежит по указанному пути.
 
 import { ESLint } from 'eslint';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 const RULE = '@typescript-eslint/no-restricted-imports';
 const eslint = new ESLint();
+
+// Первый запуск ESLint долгий: он загружает конфиг, плагины и парсер TypeScript.
+// Прогреваем его заранее с запасом по времени — иначе, когда параллельно идут остальные тесты,
+// первая проверка может не уложиться в стандартные 5 секунд и упасть по таймауту
+beforeAll(async () => {
+	await eslint.lintText('export {};\n', { filePath: 'src/ui/warmup.ts' });
+}, 120_000);
 
 // Сколько нарушений правил импорта ESLint нашёл в коде code, лежащем в filePath
 async function importErrors(filePath: string, code: string): Promise<string[]> {

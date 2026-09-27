@@ -6,10 +6,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
 	ApiError,
+	checkAccount,
+	RATE_LIMIT_RETRIES,
 	deleteNotification,
+	getChatHistory,
+	getChats,
+	getSettings,
 	getStateInstance,
 	receiveNotification,
 	sendMessage,
+	setSettings,
 } from './greenApi';
 import type { Credentials, Notification } from './types';
 
@@ -191,6 +197,154 @@ describe('getStateInstance', () => {
 
 		expect(error).toBeInstanceOf(ApiError);
 		expect(error).toMatchObject({ status: 200 });
+	});
+});
+
+describe('getSettings / setSettings', () => {
+	it('getSettings — GET, возвращает настройки', async () => {
+		replyJson({ webhookUrl: '', incomingWebhook: 'no' });
+
+		expect(await getSettings(credentials)).toEqual({ webhookUrl: '', incomingWebhook: 'no' });
+		expect(lastCall().url).toBe(`${BASE}/getSettings/token123`);
+		expect(lastCall().init?.method).toBe('GET');
+	});
+
+	it('setSettings — POST с изменяемыми полями', async () => {
+		replyJson({ saveSettings: true });
+
+		const result = await setSettings(credentials, { incomingWebhook: 'yes', webhookUrl: '' });
+
+		expect(result).toEqual({ saveSettings: true });
+		const { url, init } = lastCall();
+		expect(url).toBe(`${BASE}/setSettings/token123`);
+		expect(init?.method).toBe('POST');
+		expect(JSON.parse(init?.body as string)).toEqual({ incomingWebhook: 'yes', webhookUrl: '' });
+	});
+});
+
+describe('checkAccount', () => {
+	it('POST с номером числом, возвращает id чата в MAX', async () => {
+		replyJson({ exist: true, chatId: '10000000', fromCache: true });
+
+		const result = await checkAccount(credentials, '79991234567');
+
+		expect(result).toMatchObject({ exist: true, chatId: '10000000' });
+		const { url, init } = lastCall();
+		expect(url).toBe(`${BASE}/checkAccount/token123`);
+		expect(init?.method).toBe('POST');
+		expect(JSON.parse(init?.body as string)).toEqual({ phoneNumber: 79991234567 });
+	});
+});
+
+describe('getChats / getChatHistory', () => {
+	it('getChats — GET, возвращает список чатов', async () => {
+		const chats = [{ chatId: '10000000', name: 'Иван', type: 'user', phoneNumber: 79876543210 }];
+		replyJson(chats);
+
+		expect(await getChats(credentials)).toEqual(chats);
+		expect(lastCall().url).toBe(`${BASE}/getChats/token123`);
+	});
+
+	it('getChatHistory — POST с chatId и количеством', async () => {
+		replyJson([]);
+
+		await getChatHistory(credentials, '10000000', 100);
+
+		const { url, init } = lastCall();
+		expect(url).toBe(`${BASE}/getChatHistory/token123`);
+		expect(init?.method).toBe('POST');
+		expect(JSON.parse(init?.body as string)).toEqual({ chatId: '10000000', count: 100 });
+	});
+});
+
+describe('повтор при 429 (слишком много запросов)', () => {
+	// Паузы между повторами — секунды; в тестах время подменено, чтобы не ждать по-настоящему
+	beforeEach(() => {
+		vi.useFakeTimers();
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it('после 429 ждёт секунду и повторяет — второй ответ успешный', async () => {
+		reply('', 429);
+		replyJson({ webhookUrl: '', incomingWebhook: 'yes' });
+
+		const loading = getSettings(credentials);
+		await vi.advanceTimersByTimeAsync(999);
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+		await vi.advanceTimersByTimeAsync(1);
+
+		expect(await loading).toEqual({ webhookUrl: '', incomingWebhook: 'yes' });
+		expect(fetchMock).toHaveBeenCalledTimes(2);
+	});
+
+	it('паузы растут: 1, 2, 3 секунды', async () => {
+		for (let i = 0; i < 3; i++) reply('', 429);
+		replyJson([]);
+
+		const loading = getChats(credentials);
+		await vi.advanceTimersByTimeAsync(1000);
+		expect(fetchMock).toHaveBeenCalledTimes(2);
+		await vi.advanceTimersByTimeAsync(2000);
+		expect(fetchMock).toHaveBeenCalledTimes(3);
+		await vi.advanceTimersByTimeAsync(3000);
+		expect(fetchMock).toHaveBeenCalledTimes(4);
+
+		expect(await loading).toEqual([]);
+	});
+
+	it('если сервер прислал Retry-After — ждёт столько, сколько попросили', async () => {
+		fetchMock.mockResolvedValueOnce(
+			new Response('', { status: 429, headers: { 'Retry-After': '5' } }),
+		);
+		replyJson([]);
+
+		const loading = getChats(credentials);
+		await vi.advanceTimersByTimeAsync(4999);
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+		await vi.advanceTimersByTimeAsync(1);
+
+		expect(await loading).toEqual([]);
+	});
+
+	it('после всех повторов — ApiError 429', async () => {
+		for (let i = 0; i <= RATE_LIMIT_RETRIES; i++) reply('', 429);
+
+		const loading = getSettings(credentials).catch((e: unknown) => e);
+		await vi.runAllTimersAsync();
+
+		expect(await loading).toMatchObject({ status: 429 });
+		expect(fetchMock).toHaveBeenCalledTimes(RATE_LIMIT_RETRIES + 1);
+	});
+
+	it('тело POST-запроса отправляется и при повторе', async () => {
+		reply('', 429);
+		replyJson({ idMessage: 'BAE5' });
+
+		const sending = sendMessage(credentials, '79991234567@c.us', 'Привет');
+		await vi.advanceTimersByTimeAsync(1000);
+		await sending;
+
+		const bodies = fetchMock.mock.calls.map(([, init]) => JSON.parse(init?.body as string));
+		expect(bodies).toEqual([
+			{ chatId: '79991234567@c.us', message: 'Привет' },
+			{ chatId: '79991234567@c.us', message: 'Привет' },
+		]);
+	});
+
+	it('если запрос отменили во время паузы — отмена, а не повтор', async () => {
+		reply('', 429);
+		const controller = new AbortController();
+
+		const loading = getChats(credentials, controller.signal).catch((e: unknown) => e);
+		await vi.advanceTimersByTimeAsync(500);
+		controller.abort();
+
+		expect(await loading).toMatchObject({ name: 'AbortError' });
+		await vi.advanceTimersByTimeAsync(5000);
+		expect(fetchMock).toHaveBeenCalledTimes(1);
 	});
 });
 

@@ -14,11 +14,14 @@ type Props = {
 };
 
 export function ChatListItem({ chat, lastMessage, isActive, onSelect }: Props) {
-	// Превью: свои сообщения помечаем «Вы:», как в мессенджерах
-	let preview = 'Нет сообщений';
+	// Превью: свои сообщения помечаем «Вы:», как в мессенджерах.
+	// Чат из MAX без загруженных сообщений — переписка есть, просто ещё не загружена
+	let preview = chat.maxChatId ? 'Откройте, чтобы загрузить переписку' : 'Нет сообщений';
 	if (lastMessage) {
 		preview = lastMessage.direction === 'out' ? `Вы: ${lastMessage.text}` : lastMessage.text;
 	}
+	// lastMessageAt = 0 — чат пришёл из списка MAX без сообщений, времени показать нечего
+	const time = chat.lastMessageAt > 0 ? formatChatTime(chat.lastMessageAt) : '';
 
 	return (
 		<button
@@ -32,7 +35,7 @@ export function ChatListItem({ chat, lastMessage, isActive, onSelect }: Props) {
 			<span className={styles.body}>
 				<span className={styles.top}>
 					<span className={styles.title}>{chatTitle(chat)}</span>
-					<span className={styles.time}>{formatChatTime(chat.lastMessageAt)}</span>
+					<span className={styles.time}>{time}</span>
 				</span>
 				<span className={styles.preview}>{preview}</span>
 			</span>

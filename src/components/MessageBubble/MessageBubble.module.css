@@ -40,6 +40,11 @@
 	overflow-wrap: anywhere;
 }
 
+.unsupported {
+	font-style: italic;
+	color: var(--color-text-secondary);
+}
+
 .meta {
 	display: flex;
 	justify-content: flex-end;

@@ -4,6 +4,35 @@
 	flex-direction: column;
 }
 
+.actions {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+/* Иконка «Обновить» крутится, пока загружается список */
+.spinning svg {
+	animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* Кто попросил в системе меньше движения — без вращения */
+@media (prefers-reduced-motion: reduce) {
+	.spinning svg {
+		animation: none;
+	}
+}
+
+.error {
+	padding: 8px 16px;
+	border-bottom: 1px solid var(--color-border);
+}
+
 .chats {
 	flex: 1;
 	min-height: 0;

@@ -3,7 +3,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Credentials } from '@/api/types';
-import { INTERRUPTED_SEND_ERROR, useChatStore } from './chatStore';
+import { findChatKeyByMaxId, INTERRUPTED_SEND_ERROR, useChatStore } from './chatStore';
 import type { Message } from './types';
 
 const credentials: Credentials = {
@@ -159,6 +159,206 @@ describe('addMessage', () => {
 		store().addMessage('79991234567', '79991234567@c.us', message({ direction: 'in' }));
 
 		expect(store().activeChatId).toBeNull();
+	});
+
+	it('записывает имя собеседника и id чата в MAX в чат, созданный по номеру', () => {
+		store().createChat('79991234567');
+
+		store().addMessage('79991234567', '10000000', message({ direction: 'in' }), {
+			name: 'Иван',
+			maxChatId: '10000000',
+		});
+
+		expect(store().chats['79991234567']).toMatchObject({
+			name: 'Иван',
+			maxChatId: '10000000',
+			chatId: '79991234567@c.us',
+		});
+	});
+
+	it('обновляет имя, если собеседник переименовался, и не стирает его без нового', () => {
+		const chatId = '79991234567@c.us';
+		store().addMessage('79991234567', chatId, message({ id: 'a' }), { name: 'Иван' });
+		store().addMessage('79991234567', chatId, message({ id: 'b' }), { name: 'Иван Петров' });
+		store().addMessage('79991234567', chatId, message({ id: 'c' }));
+
+		expect(store().chats['79991234567'].name).toBe('Иван Петров');
+	});
+});
+
+describe('addMessages (история переписки)', () => {
+	it('добавляет пачку, пропускает известные и сортирует по времени', () => {
+		store().addMessage('79991234567', '79991234567@c.us', message({ id: 'new', timestamp: 3_000 }));
+
+		store().addMessages('79991234567', '79991234567@c.us', [
+			message({ id: 'old-2', timestamp: 2_000 }),
+			message({ id: 'new', timestamp: 3_000 }),
+			message({ id: 'old-1', timestamp: 1_000 }),
+		]);
+
+		expect(store().messages['79991234567'].map((m) => m.id)).toEqual(['old-1', 'old-2', 'new']);
+		expect(store().chats['79991234567'].lastMessageAt).toBe(3_000);
+	});
+
+	it('заводит чат, если его ещё нет', () => {
+		store().addMessages('10000000', '10000000', [message({ id: 'a', timestamp: 5_000 })]);
+
+		expect(store().chats['10000000']).toMatchObject({ chatId: '10000000', lastMessageAt: 5_000 });
+	});
+
+	it('если всё уже известно — состояние не меняется', () => {
+		store().addMessage('79991234567', '79991234567@c.us', message({ id: 'a' }));
+		const before = store();
+
+		store().addMessages('79991234567', '79991234567@c.us', [message({ id: 'a' })]);
+
+		expect(store()).toBe(before);
+	});
+});
+
+describe('mergeChats (чаты из MAX)', () => {
+	it('заводит новые чаты без сообщений и без времени', () => {
+		store().mergeChats([
+			{ key: '79876543210', chatId: '79876543210@c.us', maxChatId: '10000000', name: 'Иван' },
+		]);
+
+		expect(store().chats['79876543210']).toEqual({
+			id: '79876543210',
+			chatId: '79876543210@c.us',
+			maxChatId: '10000000',
+			name: 'Иван',
+			lastMessageAt: 0,
+		});
+		expect(store().messages['79876543210']).toBeUndefined();
+	});
+
+	it('у известного чата обновляет имя и id в MAX, а адрес, время и сообщения не трогает', () => {
+		store().createChat('79876543210');
+		store().addMessage('79876543210', '79876543210@c.us', message({ timestamp: 5_000 }));
+
+		store().mergeChats([
+			{ key: '79876543210', chatId: '10000000', maxChatId: '10000000', name: 'Иван' },
+		]);
+
+		expect(store().chats['79876543210']).toMatchObject({
+			chatId: '79876543210@c.us',
+			maxChatId: '10000000',
+			name: 'Иван',
+		});
+		expect(store().chats['79876543210'].lastMessageAt).toBeGreaterThanOrEqual(5_000);
+		expect(store().messages['79876543210']).toHaveLength(1);
+	});
+});
+
+describe('mergeChats: один человек — один чат', () => {
+	it('чат заведён по id в MAX (номер был скрыт), теперь номер виден — второй чат не появляется', () => {
+		store().addMessage('10000000', '10000000', message({ id: 'a' }), { maxChatId: '10000000' });
+
+		store().mergeChats([
+			{ key: '79876543210', chatId: '79876543210@c.us', maxChatId: '10000000', name: 'Анна' },
+		]);
+
+		expect(Object.keys(store().chats)).toEqual(['10000000']);
+		expect(store().chats['10000000']).toMatchObject({ name: 'Анна', maxChatId: '10000000' });
+		expect(store().messages['10000000']).toHaveLength(1);
+	});
+});
+
+describe('linkChat (id в MAX узнали через checkAccount)', () => {
+	// Как было у пользователя: чат по номеру (только свои сообщения)
+	// и тот же собеседник из списка MAX со скрытым номером (история и входящие)
+	function twoChatsForOnePerson() {
+		store().createChat('79235268075');
+		store().addMessage(
+			'79235268075',
+			'79235268075@c.us',
+			message({ id: 'out-1', timestamp: 1_000 }),
+		);
+		store().mergeChats([
+			{ key: '464953623', chatId: '464953623', maxChatId: '464953623', name: 'Никита' },
+		]);
+		store().addMessages('464953623', '464953623', [
+			message({ id: 'out-1', timestamp: 1_000 }),
+			message({ id: 'in-1', direction: 'in', timestamp: 2_000 }),
+		]);
+	}
+
+	it('сливает чат из MAX в чат по номеру: один чат, все сообщения, имя из MAX', () => {
+		twoChatsForOnePerson();
+
+		store().linkChat('79235268075', '464953623');
+
+		expect(Object.keys(store().chats)).toEqual(['79235268075']);
+		expect(store().chats['79235268075']).toMatchObject({
+			chatId: '79235268075@c.us',
+			maxChatId: '464953623',
+			name: 'Никита',
+			lastMessageAt: expect.any(Number),
+		});
+		expect(store().messages['79235268075'].map((m) => m.id)).toEqual(['out-1', 'in-1']);
+		expect(store().messages['464953623']).toBeUndefined();
+	});
+
+	it('если был открыт чат из MAX — открытым становится объединённый', () => {
+		twoChatsForOnePerson();
+		store().setActiveChat('464953623');
+
+		store().linkChat('79235268075', '464953623');
+
+		expect(store().activeChatId).toBe('79235268075');
+	});
+
+	it('после связи входящие и список MAX попадают в тот же чат', () => {
+		twoChatsForOnePerson();
+		store().linkChat('79235268075', '464953623');
+
+		expect(findChatKeyByMaxId(store().chats, '464953623')).toBe('79235268075');
+		store().mergeChats([
+			{ key: '464953623', chatId: '464953623', maxChatId: '464953623', name: 'Никита' },
+		]);
+		expect(Object.keys(store().chats)).toEqual(['79235268075']);
+	});
+
+	it('дубля нет — просто запоминает id в MAX', () => {
+		store().createChat('79235268075');
+
+		store().linkChat('79235268075', '464953623');
+
+		expect(store().chats['79235268075'].maxChatId).toBe('464953623');
+	});
+
+	it('уже связан и дубля нет — ничего не меняет', () => {
+		store().createChat('79235268075');
+		store().linkChat('79235268075', '464953623');
+		const before = store();
+
+		store().linkChat('79235268075', '464953623');
+
+		expect(store()).toBe(before);
+	});
+});
+
+describe('markNoMaxAccount', () => {
+	it('помечает чат и не теряет пометку при обновлении чата', () => {
+		store().createChat('79235268075');
+
+		store().markNoMaxAccount('79235268075');
+		store().addMessage('79235268075', '79235268075@c.us', message());
+
+		expect(store().chats['79235268075'].noMaxAccount).toBe(true);
+	});
+});
+
+describe('findChatKeyByMaxId', () => {
+	it('находит чат по id в MAX — и чат, у которого это id и есть ключ', () => {
+		store().mergeChats([
+			{ key: '79876543210', chatId: '79876543210@c.us', maxChatId: '10000000' },
+			{ key: '20000000', chatId: '20000000', maxChatId: '20000000' },
+		]);
+
+		expect(findChatKeyByMaxId(store().chats, '10000000')).toBe('79876543210');
+		expect(findChatKeyByMaxId(store().chats, '20000000')).toBe('20000000');
+		expect(findChatKeyByMaxId(store().chats, '30000000')).toBeUndefined();
 	});
 });
 
