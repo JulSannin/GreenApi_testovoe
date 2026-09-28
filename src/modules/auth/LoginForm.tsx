@@ -1,8 +1,11 @@
-// Форма входа: пользователь вводит данные инстанса из личного кабинета GREEN-API.
+// Форма входа: пользователь вводит данные инстанса из личного кабинета GREEN-API — idInstance и
+// apiTokenInstance. Адрес сервера (apiUrl) не спрашиваем: подставляем адрес по умолчанию
+// DEFAULT_API_URL из слоя API.
 // Данные проверяются запросом к серверу, и только рабочие сохраняются в стор.
 // Где стоит форма на экране, решает страница (pages/LoginPage).
 
 import { useState, type SubmitEvent } from 'react';
+import { DEFAULT_API_URL } from '@/api/greenApi';
 import type { Credentials } from '@/api/types';
 import { useChatStore } from '@/store/chatStore';
 import { Button, ErrorText, TextField } from '@/ui';
@@ -13,7 +16,6 @@ export function LoginForm() {
 	const login = useChatStore((state) => state.login);
 
 	// Значения полей формы
-	const [apiUrl, setApiUrl] = useState('');
 	const [idInstance, setIdInstance] = useState('');
 	const [apiTokenInstance, setApiTokenInstance] = useState('');
 	// Текст ошибки под формой; null — ошибки нет
@@ -27,7 +29,7 @@ export function LoginForm() {
 
 		// Убираем случайные пробелы, которые легко захватить при копировании
 		const credentials: Credentials = {
-			apiUrl: apiUrl.trim(),
+			apiUrl: DEFAULT_API_URL,
 			idInstance: idInstance.trim(),
 			apiTokenInstance: apiTokenInstance.trim(),
 		};
@@ -64,17 +66,6 @@ export function LoginForm() {
 
 			<TextField
 				large
-				label="apiUrl"
-				value={apiUrl}
-				onChange={(e) => setApiUrl(e.target.value)}
-				placeholder="https://..."
-				autoComplete="off"
-				spellCheck={false}
-				disabled={isChecking}
-			/>
-
-			<TextField
-				large
 				label="idInstance"
 				value={idInstance}
 				onChange={(e) => setIdInstance(e.target.value)}
@@ -102,7 +93,7 @@ export function LoginForm() {
 			</Button>
 
 			<p className={styles.hint}>
-				Все три значения есть в личном кабинете{' '}
+				Оба значения есть в личном кабинете{' '}
 				<a href="https://console.green-api.com" target="_blank" rel="noreferrer">
 					console.green-api.com
 				</a>

@@ -1,6 +1,7 @@
 // Слой работы с GREEN-API. Компоненты вызывают только экспортируемые функции
 // (getStateInstance, sendMessage, receiveNotification, deleteNotification, getSettings,
-// setSettings, getChats, getChatHistory) и ничего не знают про адреса, заголовки и формат ответов.
+// setSettings, checkAccount, getChats, getChatHistory) и ничего не знают про устройство адресов,
+// заголовки и формат ответов. Снаружи известен только адрес сервера по умолчанию (DEFAULT_API_URL).
 
 import type {
 	CheckAccountResponse,
@@ -43,6 +44,14 @@ type RequestOptions = {
 	// receiveNotification при пустой очереди отдаёт null — для него это не ошибка
 	allowEmpty?: boolean;
 };
+
+/**
+ * Адрес сервера GREEN-API по умолчанию: при входе его не спрашиваем, а подставляем этот.
+ * Вообще apiUrl у каждого инстанса свой (указан в личном кабинете). Если инстанс окажется
+ * на другом сервере, вход не пройдёт — тогда адрес меняется здесь, в одном месте.
+ * Сам адрес хранится в данных входа (Credentials.apiUrl), поэтому запросы работают с любым.
+ */
+export const DEFAULT_API_URL = 'https://3100.api.green-api.com';
 
 // Собирает адрес запроса. У всех методов GREEN-API он устроен одинаково:
 // {apiUrl}/waInstance{idInstance}/{method}/{apiTokenInstance}
@@ -191,21 +200,32 @@ export function sendMessage(
 	});
 }
 
+// Код 408 (Request Timeout) на запрос приёма. В документации его нет, но сервер MAX так отвечает.
+// Точная причина неизвестна: либо вышло время ожидания, либо на сервере ещё висит другой запрос
+// приёма (в режиме разработки React запускает эффект дважды). В обоих случаях новых уведомлений нет
+const RECEIVE_TIMEOUT_STATUS = 408;
+
 /**
  * Забирает одно уведомление из очереди входящих (не удаляя его).
  * Long polling: если очередь пуста, сервер держит запрос открытым до receiveTimeout секунд (5–60)
  * и ждёт новое уведомление. Если так ничего и не пришло — возвращает null.
+ * Ответ 408 тоже означает «нового нет»: для цикла приёма это не ошибка, он просто спросит снова.
  */
-export function receiveNotification(
+export async function receiveNotification(
 	credentials: Credentials,
 	signal?: AbortSignal,
 	receiveTimeout = 20,
 ): Promise<Notification | null> {
-	return request<Notification | null>(credentials, 'receiveNotification', {
-		query: { receiveTimeout },
-		signal,
-		allowEmpty: true,
-	});
+	try {
+		return await request<Notification | null>(credentials, 'receiveNotification', {
+			query: { receiveTimeout },
+			signal,
+			allowEmpty: true,
+		});
+	} catch (error) {
+		if (error instanceof ApiError && error.status === RECEIVE_TIMEOUT_STATUS) return null;
+		throw error;
+	}
 }
 
 /**

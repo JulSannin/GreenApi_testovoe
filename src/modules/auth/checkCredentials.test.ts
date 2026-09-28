@@ -38,10 +38,10 @@ describe('validateCredentials', () => {
 		expect(validateCredentials(credentials)).toBeNull();
 	});
 
-	it.each<keyof Credentials>(['apiUrl', 'idInstance', 'apiTokenInstance'])(
+	it.each<keyof Credentials>(['idInstance', 'apiTokenInstance'])(
 		'требует заполнить поле %s',
 		(field) => {
-			expect(validateCredentials({ ...credentials, [field]: '' })).toBe('Заполните все поля');
+			expect(validateCredentials({ ...credentials, [field]: '' })).toBe('Заполните оба поля');
 		},
 	);
 
@@ -120,13 +120,13 @@ describe('ошибки запроса', () => {
 		await expect(checkCredentials(credentials)).rejects.toThrow('Сервер GREEN-API недоступен');
 	});
 
-	it('ответ не JSON — подсказывает проверить apiUrl', async () => {
+	it('ответ не JSON — неожиданный ответ сервера', async () => {
 		reply('<!doctype html><html></html>');
 
 		await expect(checkCredentials(credentials)).rejects.toThrow('Неожиданный ответ сервера');
 	});
 
-	it('другой код ошибки — показывает его, а не винит apiUrl', async () => {
+	it('другой код ошибки — показывает его, а не винит данные входа', async () => {
 		reply('', 466);
 
 		await expect(checkCredentials(credentials)).rejects.toThrow(
@@ -151,5 +151,20 @@ describe('ошибки запроса', () => {
 		fetchMock.mockRejectedValueOnce(new Error('что-то непонятное'));
 
 		await expect(checkCredentials(credentials)).rejects.toBeInstanceOf(LoginError);
+	});
+
+	it('не просит проверить apiUrl — его пользователь не вводит', async () => {
+		const failures = [
+			() => reply('', 401),
+			() => reply('<!doctype html><html></html>'),
+			() => fetchMock.mockRejectedValueOnce(new DOMException('Signal timed out', 'TimeoutError')),
+			() => fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch')),
+		];
+		for (const fail of failures) {
+			fail();
+			const error = await checkCredentials(credentials).catch((e: unknown) => e);
+			expect(error).toBeInstanceOf(LoginError);
+			expect((error as LoginError).message).not.toContain('apiUrl');
+		}
 	});
 });

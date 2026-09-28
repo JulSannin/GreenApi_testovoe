@@ -136,6 +136,19 @@ describe('receiveNotification', () => {
 		expect(await receiveNotification(credentials)).toBeNull();
 	});
 
+	it('ответ 408 — тоже «нового нет», а не ошибка', async () => {
+		reply('', 408);
+		expect(await receiveNotification(credentials)).toBeNull();
+	});
+
+	it('другие ошибки сервера по-прежнему бросает', async () => {
+		reply('Internal Server Error', 500);
+		await expect(receiveNotification(credentials)).rejects.toMatchObject({
+			name: 'ApiError',
+			status: 500,
+		});
+	});
+
 	it('пробрасывает signal в fetch', async () => {
 		// Без этого controller.abort() не сможет оборвать висящий запрос в цикле приёма
 		reply('null');

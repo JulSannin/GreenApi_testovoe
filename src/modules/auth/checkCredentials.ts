@@ -30,17 +30,16 @@ const STATE_MESSAGES: Record<Exclude<StateInstance, 'authorized'>, string> = {
 };
 
 /**
- * Проверка полей формы до запроса к серверу.
- * Принимает уже обрезанные от пробелов значения.
+ * Проверка полей формы до запроса к серверу: idInstance и apiTokenInstance
+ * (apiUrl пользователь не вводит). Принимает уже обрезанные от пробелов значения.
  * Возвращает текст ошибки или null, если всё в порядке.
  */
 export function validateCredentials({
-	apiUrl,
 	idInstance,
 	apiTokenInstance,
-}: Credentials): string | null {
-	if (!apiUrl || !idInstance || !apiTokenInstance) {
-		return 'Заполните все поля';
+}: Pick<Credentials, 'idInstance' | 'apiTokenInstance'>): string | null {
+	if (!idInstance || !apiTokenInstance) {
+		return 'Заполните оба поля';
 	}
 	if (!/^\d+$/.test(idInstance)) {
 		return 'idInstance должен состоять только из цифр';
@@ -78,11 +77,11 @@ function describeRequestError(error: unknown): string {
 	if (error instanceof ApiError) {
 		// Неверный токен или несуществующий инстанс
 		if ([400, 401, 403, 404].includes(error.status)) {
-			return 'Неверные данные: проверьте apiUrl, idInstance и apiTokenInstance';
+			return 'Неверные данные: проверьте idInstance и apiTokenInstance';
 		}
-		// Сервер ответил «успешно», но не JSON — скорее всего, apiUrl указывает на чужой сайт
+		// Сервер ответил «успешно», но не JSON — например, страницей-заглушкой вместо ответа API
 		if (error.status >= 200 && error.status < 300) {
-			return 'Неожиданный ответ сервера: проверьте apiUrl';
+			return 'Неожиданный ответ сервера GREEN-API, попробуйте позже';
 		}
 		// 429 и 5xx описываются одинаково для всех запросов;
 		// остальные коды (405, 466 и т. п.) показываем как есть — по ним легче найти причину
@@ -90,11 +89,11 @@ function describeRequestError(error: unknown): string {
 	}
 
 	if (isTimeoutError(error)) {
-		return 'Сервер не отвечает: проверьте apiUrl и подключение к интернету';
+		return 'Сервер не отвечает: проверьте подключение к интернету';
 	}
 
 	if (isNetworkError(error)) {
-		return 'Не удалось связаться с сервером: проверьте apiUrl и подключение к интернету';
+		return 'Не удалось связаться с сервером: проверьте подключение к интернету';
 	}
 
 	return 'Не удалось проверить данные, попробуйте ещё раз';

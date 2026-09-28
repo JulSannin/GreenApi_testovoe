@@ -146,6 +146,17 @@ describe('runNotificationLoop', () => {
 		expect(waits).toEqual([1000, 1000]);
 	});
 
+	it('ответы 408 — как пустая очередь: без плашки и без растущей паузы', async () => {
+		serverReplies(json(null, 408), json(null, 408), json(null, 408), stop);
+
+		const { statuses, waits, urls } = await run();
+
+		expect(statuses).toEqual([]);
+		// Мгновенный ответ — пауза 1 с, как у пустой очереди, а не 3, 6, 12 с, как у сбоя
+		expect(waits).toEqual([1000, 1000, 1000]);
+		expect(urls).toHaveLength(4);
+	});
+
 	it('сбой сети: пауза растёт, плашка — со второй неудачи, после успеха — убирается', async () => {
 		serverReplies(
 			fail(new TypeError('Failed to fetch')),
