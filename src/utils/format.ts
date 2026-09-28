@@ -16,11 +16,18 @@ export function formatPhone(phone: string): string {
 }
 
 /**
- * Адрес собеседника. Чат, созданный по номеру, отправляет на адрес '...@c.us' — показываем номер.
- * Чат без номера (пришёл только id чата в MAX) показываем по этому id.
+ * Номер собеседника для показа — только у чата по номеру (он отправляет на адрес '...@c.us').
+ * У чата без номера (известен только id чата в MAX) — undefined.
+ */
+export function chatPhone(chat: Chat): string | undefined {
+	return chat.chatId.endsWith('@c.us') ? formatPhone(chat.id) : undefined;
+}
+
+/**
+ * Адрес собеседника: номер, а у чата без номера — id чата в MAX.
  */
 export function chatAddress(chat: Chat): string {
-	return chat.chatId.endsWith('@c.us') ? formatPhone(chat.id) : chat.id;
+	return chatPhone(chat) ?? chat.id;
 }
 
 /**

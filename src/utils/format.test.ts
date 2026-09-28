@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Chat } from '@/store/types';
 import {
 	chatAddress,
+	chatPhone,
 	chatTitle,
 	formatChatTime,
 	formatDay,
@@ -17,6 +18,23 @@ describe('formatPhone', () => {
 
 	it('другие номера показывает как «+» и цифры', () => {
 		expect(formatPhone('375291234567')).toBe('+375291234567');
+	});
+});
+
+describe('chatPhone', () => {
+	it('у чата по номеру — номер', () => {
+		const chat: Chat = { id: '79991234567', chatId: '79991234567@c.us', lastMessageAt: 0 };
+		expect(chatPhone(chat)).toBe('+7 999 123-45-67');
+	});
+
+	it('у чата без номера — ничего, даже если известен id в MAX', () => {
+		const chat: Chat = {
+			id: '10000000',
+			chatId: '10000000',
+			maxChatId: '10000000',
+			lastMessageAt: 0,
+		};
+		expect(chatPhone(chat)).toBeUndefined();
 	});
 });
 
