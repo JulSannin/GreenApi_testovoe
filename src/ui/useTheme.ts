@@ -1,8 +1,9 @@
 // Хук: светлая или тёмная тема сейчас и переключение между ними.
 // По умолчанию тема — как в системе (это делает сам CSS, см. theme.css). Выбор кнопкой ставит
 // атрибут data-theme на <html> и запоминается в localStorage. Сразу при загрузке страницы,
-// ещё до React, выбор применяет короткий скрипт в index.html — иначе страница мигнула бы
-// темой системы. Ключ в localStorage у них общий: THEME_STORAGE_KEY.
+// ещё до React, выбор из localStorage ставит на <html> короткий скрипт в index.html — иначе
+// страница мигнула бы темой системы. Ключ в localStorage у них общий: THEME_STORAGE_KEY
+// (что скрипт читает именно его, проверяет useTheme.test.ts).
 
 import { useState } from 'react';
 import { useMediaQuery } from '@/ui/useMediaQuery';
@@ -12,15 +13,13 @@ export type Theme = 'light' | 'dark';
 export const THEME_STORAGE_KEY = 'green-api-theme';
 const DARK_QUERY = '(prefers-color-scheme: dark)';
 
-// Выбор пользователя; null — не выбирал, тема как в системе
+// Выбор пользователя; null — не выбирал, тема как в системе.
+// Читаем атрибут data-theme, а не localStorage: страницу красит именно атрибут. Если localStorage
+// недоступен, выбор туда не сохранится, но атрибут останется — и кнопка, появившись заново
+// (например, после сужения и расширения окна), всё равно покажет ту тему, что на экране
 function readChoice(): Theme | null {
-	try {
-		const saved = localStorage.getItem(THEME_STORAGE_KEY);
-		return saved === 'light' || saved === 'dark' ? saved : null;
-	} catch {
-		// localStorage недоступен (например, заблокирован в настройках браузера)
-		return null;
-	}
+	const theme = document.documentElement.dataset.theme;
+	return theme === 'light' || theme === 'dark' ? theme : null;
 }
 
 function saveChoice(choice: Theme | null): void {
