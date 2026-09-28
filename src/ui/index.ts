@@ -11,4 +11,5 @@ export { IconButton } from './IconButton/IconButton';
 export { Input } from './Input/Input';
 export { PanelHeader } from './PanelHeader/PanelHeader';
 export { TextField } from './TextField/TextField';
+export { ThemeToggle } from './ThemeToggle/ThemeToggle';
 export { useMediaQuery } from './useMediaQuery';

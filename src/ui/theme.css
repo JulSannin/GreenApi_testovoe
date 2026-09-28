@@ -101,9 +101,13 @@
 	--shadow: 0 2px 12px rgb(0 0 0 / 8%);
 }
 
-/* Тёмная тема — по настройке системы. Меняются только цвета */
+/* Тёмная тема. Два одинаковых набора цветов:
+   1) по настройке системы — пока кнопкой не выбрана светлая тема;
+   2) по выбору кнопкой — атрибут data-theme="dark" на <html> (ставит ui/useTheme.ts).
+   Одним блоком это не записать: первый набор живёт внутри @media. Наборы должны совпадать —
+   это проверяет theme.test.ts. Меняются только цвета */
 @media (prefers-color-scheme: dark) {
-	:root {
+	:root:not([data-theme='light']) {
 		--color-bg: #0f0f12;
 		--color-surface: #17181c;
 		--color-card: #25262d;
@@ -134,4 +138,43 @@
 		--color-warning: #ffc46b;
 		--color-warning-bg: #3a2c0c;
 	}
+}
+
+:root[data-theme='dark'] {
+	/* Системные части страницы — тоже тёмные, даже если в системе светлая тема */
+	color-scheme: dark;
+	--color-bg: #0f0f12;
+	--color-surface: #17181c;
+	--color-card: #25262d;
+
+	--color-text: #ffffff;
+	--color-text-secondary: rgb(255 255 255 / 80%);
+	--color-border: rgb(255 255 255 / 12%);
+
+	--color-hover: hsl(0 0% 91% / 4%);
+	--color-pressed: hsl(0 0% 91% / 8%);
+	--color-field: rgb(255 255 255 / 9%);
+	--color-icon-muted: rgb(255 255 255 / 28%);
+
+	/* Заливка та же, что в светлой теме: белый текст на ней читается одинаково */
+	--color-accent: #006ee5;
+	--color-accent-hover: #0062cc;
+	/* На тёмном фоне акцентному тексту нужен светлый синий: #006ee5 дал бы только 3.68:1 */
+	--color-accent-text: #479fff;
+	--color-focus: #479fff;
+	--color-on-accent: #ffffff;
+	/* Подобрано */
+	--color-accent-subtle: #0b2f59;
+	--color-active: #122e4e;
+
+	/* Подобрано: #ce4257 из MAX UI на подложке даёт только 4.14:1 */
+	--color-error: #ff6b73;
+	--color-error-bg: #3d1a1e;
+	--color-warning: #ffc46b;
+	--color-warning-bg: #3a2c0c;
+}
+
+/* Светлая тема, выбранная кнопкой, при тёмной системной */
+:root[data-theme='light'] {
+	color-scheme: light;
 }

@@ -5,6 +5,18 @@
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Чат GREEN-API</title>
+		<script>
+			// Тема, выбранная кнопкой в приложении, — сразу, до стилей и React,
+			// чтобы страница не мигнула темой системы. Ключ — THEME_STORAGE_KEY из src/ui/useTheme.ts
+			try {
+				const theme = localStorage.getItem('green-api-theme');
+				if (theme === 'light' || theme === 'dark') {
+					document.documentElement.dataset.theme = theme;
+				}
+			} catch {
+				// localStorage недоступен — тема как в системе
+			}
+		</script>
 	</head>
 	<body>
 		<div id="root"></div>

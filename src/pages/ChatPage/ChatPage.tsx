@@ -9,7 +9,7 @@ import { ChatSidebar } from '@/modules/chatList';
 import { ChatWindow } from '@/modules/chatWindow';
 import { IncomingMessagesListener } from '@/modules/notifications';
 import { useActiveChat, useChatStore } from '@/store/chatStore';
-import { cx, EmptyState, useMediaQuery } from '@/ui';
+import { cx, EmptyState, ThemeToggle, useMediaQuery } from '@/ui';
 import styles from './ChatPage.module.css';
 
 // Граница «узкого экрана» — единственное место, где она задана.
@@ -29,7 +29,15 @@ export function ChatPage() {
 			{/* narrow — одна колонка; chatOpen — на узком экране показать переписку, а не список */}
 			<div className={cx(styles.screen, isNarrow && styles.narrow, activeChat && styles.chatOpen)}>
 				<aside className={styles.sidebar}>
-					<ChatSidebar headerActions={<LogoutButton />} />
+					<ChatSidebar
+						headerActions={
+							<>
+								{/* Кнопка темы — только на широком экране (компьютер) */}
+								{!isNarrow && <ThemeToggle />}
+								<LogoutButton />
+							</>
+						}
+					/>
 				</aside>
 
 				<main className={styles.main}>
