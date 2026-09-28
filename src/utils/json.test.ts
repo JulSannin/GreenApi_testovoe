@@ -55,4 +55,12 @@ describe('secondsToMs', () => {
 			expect(secondsToMs(value)).toBeUndefined();
 		}
 	});
+
+	it('время, которое не умеет Date, — тоже undefined: иначе упало бы форматирование', () => {
+		expect(secondsToMs(1e13)).toBeUndefined();
+		expect(secondsToMs(Infinity)).toBeUndefined();
+		// Граница: самая поздняя допустимая дата ещё проходит
+		expect(secondsToMs(8.64e12)).toBe(8.64e15);
+		expect(() => new Date(secondsToMs(8.64e12)!).toISOString()).not.toThrow();
+	});
 });

@@ -34,8 +34,10 @@ export function MessageInput({ chat }: Props) {
 
 	function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
 		// isComposing — идёт набор через IME (например, китайский или японский ввод):
-		// там Enter подтверждает выбор символа, и отправлять сообщение нельзя
-		if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+		// там Enter подтверждает выбор символа, и отправлять сообщение нельзя.
+		// Safari у этого Enter ставит isComposing = false, но keyCode 229 — проверяем и его
+		const isComposing = event.nativeEvent.isComposing || event.keyCode === 229;
+		if (event.key === 'Enter' && !event.shiftKey && !isComposing) {
 			// Без этого Enter вставит перенос строки
 			event.preventDefault();
 			send();

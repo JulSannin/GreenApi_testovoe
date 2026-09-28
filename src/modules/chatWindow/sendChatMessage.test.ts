@@ -106,6 +106,24 @@ describe('sendChatMessage', () => {
 		expect(fetchMock).not.toHaveBeenCalled();
 	});
 
+	it('чат из MAX слили с чатом по номеру во время отправки — подтверждение не теряется', async () => {
+		// Чат из MAX (ключ — id MAX) и чат по номеру того же человека
+		const maxChat: Chat = { id: '464953623', chatId: '464953623', lastMessageAt: 0 };
+		store().addMessages(maxChat.id, maxChat.chatId, []);
+		store().createChat('79235268075');
+
+		const respond = replyLater();
+		const sending = sendChatMessage(maxChat, 'Привет');
+		// Пока идёт запрос, checkAccount связал номер с этим чатом MAX: сообщение переехало
+		store().linkChat('79235268075', maxChat.id);
+		respond(JSON.stringify({ idMessage: 'BAE5' }));
+		await sending;
+
+		expect(store().messages['79235268075']).toEqual([
+			expect.objectContaining({ id: 'BAE5', text: 'Привет', status: 'sent' }),
+		]);
+	});
+
 	it('если пользователь вышел во время отправки, не восстанавливает чат', async () => {
 		const respond = replyLater();
 		const sending = sendChatMessage(chat, 'Привет');

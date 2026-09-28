@@ -63,10 +63,15 @@ function withChatInfo(chat: Chat | undefined, key: string, chatId: string, meta:
 	};
 }
 
-// Два списка сообщений в один: без повторов (по id), по времени
+// Два списка сообщений в один: без повторов (по id), по времени.
+// Повторы отсекаются и внутри самой пачки added: сервер может прислать одно сообщение дважды
 function mergeMessages(current: Message[], added: Message[]): Message[] {
 	const known = new Set(current.map((m) => m.id));
-	const fresh = added.filter((m) => !known.has(m.id));
+	const fresh = added.filter((m) => {
+		if (known.has(m.id)) return false;
+		known.add(m.id);
+		return true;
+	});
 	if (fresh.length === 0) return current;
 	return [...current, ...fresh].sort((a, b) => a.timestamp - b.timestamp);
 }

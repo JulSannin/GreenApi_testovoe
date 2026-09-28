@@ -5,8 +5,22 @@
 
 import type { ReactNode } from 'react';
 import { Banner, Button } from '@/ui';
+import type { SettingsProblem } from './instanceSettings';
 import { useIncomingMessages } from './useIncomingMessages';
 import { useInstanceSettings } from './useInstanceSettings';
+
+// Текст плашки для проблемы с настройками. Если добавить новую проблему и забыть её здесь,
+// TypeScript не соберёт проект: функция без return для неё не вернёт строку
+function settingsProblemText(problem: SettingsProblem): string {
+	switch (problem.kind) {
+		case 'webhookUrl':
+			return `В настройках инстанса указан адрес для уведомлений (${problem.url}) — сообщения уходят туда, а не в это приложение.`;
+		case 'incomingOff':
+			return 'В настройках инстанса выключены уведомления о входящих сообщениях — сообщения от собеседников не придут.';
+		case 'outgoingOff':
+			return 'В настройках инстанса выключены уведомления об исходящих сообщениях — то, что вы отправите с телефона, здесь не появится.';
+	}
+}
 
 type Props = {
 	unauthorizedAction?: ReactNode;
@@ -28,10 +42,7 @@ export function IncomingMessagesListener({ unauthorizedAction }: Props) {
 	// 2. Настройки инстанса: сообщения не придут, пока их не исправить
 	if (settings.state.kind === 'problem') {
 		const { problem, saving, error } = settings.state;
-		const text =
-			problem.kind === 'webhookUrl'
-				? `В настройках инстанса указан адрес для уведомлений (${problem.url}) — сообщения уходят туда, а не в это приложение.`
-				: 'В настройках инстанса выключены уведомления о входящих сообщениях — сообщения от собеседников не придут.';
+		const text = settingsProblemText(problem);
 
 		return (
 			<Banner

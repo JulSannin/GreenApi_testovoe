@@ -200,6 +200,16 @@ describe('addMessages (история переписки)', () => {
 		expect(store().chats['79991234567'].lastMessageAt).toBe(3_000);
 	});
 
+	it('одно сообщение дважды в самой пачке — сохраняется один раз', () => {
+		store().addMessages('10000000', '10000000', [
+			message({ id: 'a', timestamp: 1_000 }),
+			message({ id: 'a', timestamp: 1_000 }),
+			message({ id: 'b', timestamp: 2_000 }),
+		]);
+
+		expect(store().messages['10000000'].map((m) => m.id)).toEqual(['a', 'b']);
+	});
+
 	it('заводит чат, если его ещё нет', () => {
 		store().addMessages('10000000', '10000000', [message({ id: 'a', timestamp: 5_000 })]);
 

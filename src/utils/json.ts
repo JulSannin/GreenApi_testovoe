@@ -39,9 +39,16 @@ export function asPhone(value: unknown): string | null {
 	return digits && isValidPhone(digits) ? digits : null;
 }
 
+// Самая поздняя дата, которую умеет Date (8.64e15 мс). Дальше — Invalid Date, и toISOString
+// или форматирование времени бросают ошибку, которая уронила бы отрисовку переписки
+const MAX_DATE_MS = 8.64e15;
+
 // Время из секунд (так его присылает GREEN-API) в миллисекунды; кривое — undefined
 export function secondsToMs(value: unknown): number | undefined {
-	return typeof value === 'number' && Number.isFinite(value) && value > 0
+	return typeof value === 'number' &&
+		Number.isFinite(value) &&
+		value > 0 &&
+		value * 1000 <= MAX_DATE_MS
 		? value * 1000
 		: undefined;
 }

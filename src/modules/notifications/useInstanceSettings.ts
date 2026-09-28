@@ -82,28 +82,32 @@ export function useInstanceSettings() {
 		}
 
 		setState({ ...state, saving: true, error: undefined });
+		// Почему не получилось — для текста ошибки
+		let reason: string;
 		try {
 			const result = await setSettings(
 				credentials,
 				REQUIRED_SETTINGS,
 				AbortSignal.timeout(REQUEST_TIMEOUT_MS),
 			);
-			if (!result.saveSettings) {
-				throw new Error('Сервер не сохранил настройки');
+			if (result.saveSettings) {
+				rememberSettingsSaved(browserStorage(), credentials.idInstance);
+				setState({ kind: 'saved' });
+				return;
 			}
-			rememberSettingsSaved(browserStorage(), credentials.idInstance);
-			setState({ kind: 'saved' });
+			// Сервер ответил, но настройки не сохранил — связь тут ни при чём
+			reason = 'сервер не принял настройки';
 		} catch (error) {
-			const reason =
+			reason =
 				error instanceof ApiError
 					? (describeServerStatus(error.status) ?? `код ${error.status}`)
 					: 'нет связи с сервером';
-			setState({
-				...state,
-				saving: false,
-				error: `Не удалось сохранить настройки (${reason}). Попробуйте ещё раз или измените их в личном кабинете GREEN-API`,
-			});
 		}
+		setState({
+			...state,
+			saving: false,
+			error: `Не удалось сохранить настройки (${reason}). Попробуйте ещё раз или измените их в личном кабинете GREEN-API`,
+		});
 	}
 
 	// Скрыть плашку «настройки сохранены»

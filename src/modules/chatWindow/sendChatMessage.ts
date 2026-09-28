@@ -61,6 +61,17 @@ export async function retryChatMessage(chat: Chat, message: Message): Promise<vo
 	await deliver(credentials, chat, message.id, message.text);
 }
 
+// Ключ чата, в котором сообщение лежит сейчас. Пока шёл запрос, чат могли слить с другим:
+// чат из MAX вливается в чат по номеру (linkChat), и сообщение переезжает под другой ключ.
+// Если сообщения нигде нет (удалили, вышли), остаётся прежний ключ — запись в стор ничего не сделает
+function currentChatKey(localId: string, chatKey: string): string {
+	const { messages } = useChatStore.getState();
+	if (messages[chatKey]?.some((m) => m.id === localId)) return chatKey;
+	return (
+		Object.keys(messages).find((key) => messages[key].some((m) => m.id === localId)) ?? chatKey
+	);
+}
+
 // Сам запрос и запись результата в стор
 async function deliver(
 	credentials: Credentials,
@@ -76,9 +87,9 @@ async function deliver(
 			AbortSignal.timeout(SEND_TIMEOUT_MS),
 		);
 		// getState() — заново: за время запроса состояние могло измениться
-		useChatStore.getState().confirmMessage(chat.id, localId, idMessage);
+		useChatStore.getState().confirmMessage(currentChatKey(localId, chat.id), localId, idMessage);
 	} catch (error) {
-		useChatStore.getState().updateMessage(chat.id, localId, {
+		useChatStore.getState().updateMessage(currentChatKey(localId, chat.id), localId, {
 			status: 'failed',
 			error: describeSendError(error),
 		});

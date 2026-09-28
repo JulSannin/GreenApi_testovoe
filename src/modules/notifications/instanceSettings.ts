@@ -8,9 +8,11 @@ import { asObject, asString } from '@/utils/json';
 /**
  * Что не так с настройками:
  * webhookUrl — уведомления уходят на указанный адрес, а не в очередь, которую читает приложение;
- * incomingOff — уведомления о входящих сообщениях выключены.
+ * incomingOff — уведомления о входящих сообщениях выключены: ответы собеседников не придут;
+ * outgoingOff — выключены уведомления о сообщениях, отправленных с телефона: они не появятся в чате.
  */
-export type SettingsProblem = { kind: 'webhookUrl'; url: string } | { kind: 'incomingOff' };
+export type SettingsProblem =
+	{ kind: 'webhookUrl'; url: string } | { kind: 'incomingOff' } | { kind: 'outgoingOff' };
 
 /**
  * Что записываем кнопкой «Включить»: приём через очередь HTTP API и уведомления
@@ -78,8 +80,12 @@ export function findSettingsProblem(settings: unknown): SettingsProblem | null {
 	const url = asString(data.webhookUrl);
 	if (url) return { kind: 'webhookUrl', url };
 
+	// Поле, которого нет в ответе, не считаем выключенным: по такому ответу проблему не понять
 	if (data.incomingWebhook !== undefined && data.incomingWebhook !== 'yes') {
 		return { kind: 'incomingOff' };
+	}
+	if (data.outgoingMessageWebhook !== undefined && data.outgoingMessageWebhook !== 'yes') {
+		return { kind: 'outgoingOff' };
 	}
 	return null;
 }

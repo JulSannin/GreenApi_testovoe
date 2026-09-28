@@ -75,6 +75,18 @@ describe('findSettingsProblem', () => {
 		});
 	});
 
+	it('выключены уведомления о сообщениях с телефона', () => {
+		expect(
+			findSettingsProblem({ webhookUrl: '', incomingWebhook: 'yes', outgoingMessageWebhook: 'no' }),
+		).toEqual({ kind: 'outgoingOff' });
+	});
+
+	it('выключенные входящие важнее выключенных исходящих', () => {
+		expect(
+			findSettingsProblem({ webhookUrl: '', incomingWebhook: 'no', outgoingMessageWebhook: 'no' }),
+		).toEqual({ kind: 'incomingOff' });
+	});
+
 	it('указан адрес для уведомлений — важнее, чем выключенные входящие', () => {
 		expect(
 			findSettingsProblem({ webhookUrl: ' https://example.com/hook ', incomingWebhook: 'no' }),
