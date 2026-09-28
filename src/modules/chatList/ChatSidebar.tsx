@@ -3,7 +3,6 @@
 // модули не импортируют друг друга.
 
 import type { ReactNode } from 'react';
-import { useChatStore } from '@/store/chatStore';
 import { ErrorText, IconButton, PanelHeader } from '@/ui';
 import { ChatList } from './ChatList';
 import styles from './ChatSidebar.module.css';
@@ -16,7 +15,6 @@ type Props = {
 };
 
 export function ChatSidebar({ headerActions }: Props) {
-	const idInstance = useChatStore((state) => state.credentials?.idInstance);
 	const remoteChats = useRemoteChats();
 	const isLoading = remoteChats.status === 'loading';
 	// Чаты, созданные по номеру, связываем с чатами в MAX — чтобы ответы и история попадали в них
@@ -27,7 +25,6 @@ export function ChatSidebar({ headerActions }: Props) {
 			<PanelHeader
 				level={1}
 				title="Чаты"
-				subtitle={`Инстанс ${idInstance}`}
 				after={
 					<div className={styles.actions}>
 						<IconButton
